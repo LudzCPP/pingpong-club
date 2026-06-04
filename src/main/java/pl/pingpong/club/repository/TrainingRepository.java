@@ -1,0 +1,48 @@
+package pl.pingpong.club.repository;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import pl.pingpong.club.model.Training;
+import pl.pingpong.club.model.TrainingStatus;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
+
+public interface TrainingRepository extends JpaRepository<Training, UUID> {
+
+    List<Training> findAllByPlayerId(UUID playerId);
+
+    List<Training> findAllByCoachId(UUID coachId);
+
+    List<Training> findAllByStatus(TrainingStatus status);
+
+    /** Treningi zawodnika w zadanym przedziale czasowym – używane przez moduł finansowy. */
+    @Query("""
+            SELECT t FROM Training t
+            WHERE t.player.id = :playerId
+              AND t.scheduledAt BETWEEN :from AND :to
+              AND t.status = :status
+            """)
+    List<Training> findByPlayerAndPeriodAndStatus(
+            @Param("playerId") UUID playerId,
+            @Param("from") LocalDateTime from,
+            @Param("to") LocalDateTime to,
+            @Param("status") TrainingStatus status
+    );
+
+    /** Sprawdza, czy w danym oknie czasowym trener ma już zaplanowany trening (wykrywanie kolizji). */
+    @Query("""
+            SELECT COUNT(t) > 0 FROM Training t
+            WHERE t.coach.id = :coachId
+              AND t.status != pl.pingpong.club.model.TrainingStatus.CANCELLED
+              AND t.scheduledAt < :end
+              AND FUNCTION('timestampadd', 'MINUTE', t.durationMinutes, t.scheduledAt) > :start
+            """)
+    boolean existsConflictForCoach(
+            @Param("coachId") UUID coachId,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end
+    );
+}
