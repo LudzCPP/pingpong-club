@@ -28,6 +28,13 @@ server:
   servlet:
     context-path: /api
 
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+  api-docs:
+    path: /v3/api-docs
+
 app:
   jwt:
     # ZMIEŃ ten sekret przed deploymentem na produkcję!
