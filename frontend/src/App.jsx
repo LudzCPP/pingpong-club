@@ -3,6 +3,7 @@ import { AuthProvider } from './context/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
 import Navbar from './components/Navbar';
 import LoginPage from './pages/LoginPage';
+import DashboardPage from './pages/DashboardPage';
 import TrainingsPage from './pages/TrainingsPage';
 import PlayersPage from './pages/PlayersPage';
 import FinancesPage from './pages/FinancesPage';
@@ -12,7 +13,7 @@ function Layout({ children }) {
   return (
     <>
       <Navbar />
-      <main className="main-content">{children}</main>
+      <main>{children}</main>
     </>
   );
 }
@@ -23,6 +24,9 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/dashboard" element={
+            <PrivateRoute><Layout><DashboardPage /></Layout></PrivateRoute>
+          } />
           <Route path="/trainings" element={
             <PrivateRoute><Layout><TrainingsPage /></Layout></PrivateRoute>
           } />
@@ -32,7 +36,7 @@ export default function App() {
           <Route path="/finances" element={
             <PrivateRoute><Layout><FinancesPage /></Layout></PrivateRoute>
           } />
-          <Route path="*" element={<Navigate to="/trainings" replace />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

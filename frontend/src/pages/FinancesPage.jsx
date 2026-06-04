@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react';
 import client from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import Avatar from '../components/Avatar';
+import StatCard from '../components/StatCard';
+
+const inputCls = 'bg-base border border-border rounded-lg px-3 py-2 text-white text-sm placeholder-muted focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors w-full';
+const labelCls = 'text-xs font-medium text-muted uppercase tracking-wide';
 
 export default function FinancesPage() {
   const { user } = useAuth();
@@ -27,9 +32,7 @@ export default function FinancesPage() {
     try {
       const { data } = await client.get(`/finances/summary?from=${from}&to=${to}`);
       setSummary(data);
-    } finally {
-      setLoadingSummary(false);
-    }
+    } finally { setLoadingSummary(false); }
   }
 
   async function fetchMatches() {
@@ -38,6 +41,7 @@ export default function FinancesPage() {
   }
 
   useEffect(() => {
+    fetchSummary();
     fetchMatches();
     if (isCoach) client.get('/users/players').then(r => setPlayers(r.data));
   }, [isCoach]);
@@ -53,9 +57,7 @@ export default function FinancesPage() {
       await fetchMatches();
     } catch (err) {
       setMatchError(err.response?.data?.detail || 'Błąd zapisu meczu.');
-    } finally {
-      setSavingMatch(false);
-    }
+    } finally { setSavingMatch(false); }
   }
 
   async function handleMatchDelete(id) {
@@ -65,133 +67,134 @@ export default function FinancesPage() {
   }
 
   return (
-    <div className="page">
-      <h2>Finanse</h2>
+    <div className="max-w-6xl mx-auto px-6 py-8 space-y-6">
 
-      {/* Podsumowanie */}
-      <div className="card">
-        <h3>Zestawienie zarobków</h3>
-        <div className="filter-row">
-          <div className="form-group">
-            <label>Od</label>
-            <input type="date" value={from} onChange={e => setFrom(e.target.value)} />
-          </div>
-          <div className="form-group">
-            <label>Do</label>
-            <input type="date" value={to} onChange={e => setTo(e.target.value)} />
-          </div>
-          <button className="btn btn-primary" onClick={fetchSummary} disabled={loadingSummary}>
-            {loadingSummary ? 'Obliczanie...' : 'Oblicz'}
-          </button>
+      {/* Header + stat cards */}
+      <div>
+        <h1 className="text-2xl font-bold text-white mb-6">Finanse</h1>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <StatCard icon="🏓" value={`${Number(summary?.totalTrainingEarnings ?? 0).toFixed(0)} zł`} label={`Treningi (${summary?.completedTrainingsCount ?? 0})`} />
+          <StatCard icon="🏆" value={`${Number(summary?.totalMatchPayments ?? 0).toFixed(0)} zł`} label={`Mecze (${summary?.matchesCount ?? 0})`} />
+          <StatCard icon="💰" value={`${Number(summary?.grandTotal ?? 0).toFixed(0)} zł`} label="Łącznie" accent />
         </div>
 
-        {summary && (
-          <div className="summary-grid">
-            <div className="summary-card">
-              <div className="summary-label">Treningi zrealizowane</div>
-              <div className="summary-value">{summary.completedTrainingsCount}</div>
-              <div className="summary-sub">{summary.totalTrainingEarnings} zł</div>
-            </div>
-            <div className="summary-card">
-              <div className="summary-label">Mecze ligowe</div>
-              <div className="summary-value">{summary.matchesCount}</div>
-              <div className="summary-sub">{summary.totalMatchPayments} zł</div>
-            </div>
-            <div className="summary-card summary-total">
-              <div className="summary-label">Łącznie</div>
-              <div className="summary-value">{summary.grandTotal} zł</div>
-            </div>
+        {/* Date filter */}
+        <div className="bg-surface border border-border rounded-xl px-5 py-4 flex items-end gap-4 flex-wrap">
+          <div className="space-y-1.5">
+            <label className={labelCls}>Od</label>
+            <input type="date" value={from} onChange={e => setFrom(e.target.value)} className={`${inputCls} w-auto`} />
+          </div>
+          <div className="space-y-1.5">
+            <label className={labelCls}>Do</label>
+            <input type="date" value={to} onChange={e => setTo(e.target.value)} className={`${inputCls} w-auto`} />
+          </div>
+          <button onClick={fetchSummary} disabled={loadingSummary}
+            className="bg-accent hover:bg-green-600 disabled:opacity-50 text-white font-semibold px-5 py-2 rounded-lg transition-colors text-sm">
+            {loadingSummary ? 'Obliczanie...' : 'Przelicz'}
+          </button>
+        </div>
+      </div>
+
+      {/* Matches section */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-white font-semibold text-lg">Mecze ligowe</h2>
+          {isCoach && (
+            <button onClick={() => setShowMatchForm(!showMatchForm)}
+              className="bg-accent hover:bg-green-600 text-white font-semibold px-4 py-2 rounded-lg transition-colors text-sm">
+              {showMatchForm ? '✕ Anuluj' : '+ Dodaj mecz'}
+            </button>
+          )}
+        </div>
+
+        {/* Match form */}
+        {showMatchForm && (
+          <div className="bg-surface border border-border border-l-4 border-l-accent rounded-xl p-6">
+            <form onSubmit={handleMatchCreate} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="space-y-1.5">
+                <label className={labelCls}>Zawodnik</label>
+                <select value={matchForm.playerId} onChange={e => setMatchForm({ ...matchForm, playerId: e.target.value })} required className={inputCls}>
+                  <option value="">-- wybierz --</option>
+                  {players.map(p => <option key={p.id} value={p.id}>{p.firstName} {p.lastName}</option>)}
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className={labelCls}>Data meczu</label>
+                <input type="date" value={matchForm.matchDate} onChange={e => setMatchForm({ ...matchForm, matchDate: e.target.value })} required className={inputCls} />
+              </div>
+              <div className="space-y-1.5">
+                <label className={labelCls}>Przeciwnik</label>
+                <input value={matchForm.opponent} onChange={e => setMatchForm({ ...matchForm, opponent: e.target.value })} required className={inputCls} />
+              </div>
+              <div className="space-y-1.5">
+                <label className={labelCls}>Wynik (np. 3:1)</label>
+                <input value={matchForm.result} placeholder="3:1" onChange={e => setMatchForm({ ...matchForm, result: e.target.value })} required className={inputCls} />
+              </div>
+              <div className="space-y-1.5">
+                <label className={labelCls}>Wypłata (zł)</label>
+                <input type="number" min="0" step="0.01" value={matchForm.payment} onChange={e => setMatchForm({ ...matchForm, payment: e.target.value })} required className={inputCls} />
+              </div>
+              <div className="space-y-1.5">
+                <label className={labelCls}>Notatki</label>
+                <input value={matchForm.notes} onChange={e => setMatchForm({ ...matchForm, notes: e.target.value })} placeholder="opcjonalnie" className={inputCls} />
+              </div>
+              {matchError && <div className="sm:col-span-2 lg:col-span-3 bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-lg">{matchError}</div>}
+              <div className="sm:col-span-2 lg:col-span-3">
+                <button type="submit" disabled={savingMatch} className="bg-accent hover:bg-green-600 disabled:opacity-50 text-white font-semibold px-6 py-2 rounded-lg transition-colors text-sm">
+                  {savingMatch ? 'Zapisywanie...' : 'Zapisz mecz'}
+                </button>
+              </div>
+            </form>
           </div>
         )}
-      </div>
 
-      {/* Mecze ligowe */}
-      <div className="page-header" style={{ marginTop: '2rem' }}>
-        <h3>Mecze ligowe</h3>
-        {isCoach && (
-          <button className="btn btn-primary" onClick={() => setShowMatchForm(!showMatchForm)}>
-            {showMatchForm ? 'Anuluj' : '+ Dodaj mecz'}
-          </button>
-        )}
-      </div>
-
-      {showMatchForm && (
-        <div className="card form-card">
-          <form onSubmit={handleMatchCreate} className="form-grid">
-            <div className="form-group">
-              <label>Zawodnik</label>
-              <select value={matchForm.playerId} onChange={e => setMatchForm({ ...matchForm, playerId: e.target.value })} required>
-                <option value="">-- wybierz --</option>
-                {players.map(p => <option key={p.id} value={p.id}>{p.firstName} {p.lastName}</option>)}
-              </select>
-            </div>
-            <div className="form-group">
-              <label>Data meczu</label>
-              <input type="date" value={matchForm.matchDate}
-                onChange={e => setMatchForm({ ...matchForm, matchDate: e.target.value })} required />
-            </div>
-            <div className="form-group">
-              <label>Przeciwnik</label>
-              <input value={matchForm.opponent}
-                onChange={e => setMatchForm({ ...matchForm, opponent: e.target.value })} required />
-            </div>
-            <div className="form-group">
-              <label>Wynik (np. 3:1)</label>
-              <input value={matchForm.result} placeholder="3:1"
-                onChange={e => setMatchForm({ ...matchForm, result: e.target.value })} required />
-            </div>
-            <div className="form-group">
-              <label>Wypłata (zł)</label>
-              <input type="number" min="0" step="0.01" value={matchForm.payment}
-                onChange={e => setMatchForm({ ...matchForm, payment: e.target.value })} required />
-            </div>
-            <div className="form-group">
-              <label>Notatki</label>
-              <input value={matchForm.notes} onChange={e => setMatchForm({ ...matchForm, notes: e.target.value })} />
-            </div>
-            {matchError && <div className="alert alert-error form-group-full">{matchError}</div>}
-            <div className="form-group-full">
-              <button type="submit" className="btn btn-primary" disabled={savingMatch}>
-                {savingMatch ? 'Zapisywanie...' : 'Zapisz mecz'}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      <div className="table-wrapper">
-        {matches.length === 0 ? (
-          <div className="empty-state">Brak meczów ligowych</div>
-        ) : (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Zawodnik</th>
-                <th>Data</th>
-                <th>Przeciwnik</th>
-                <th>Wynik</th>
-                <th>Wypłata</th>
-                {isCoach && <th>Akcje</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {matches.map(m => (
-                <tr key={m.id}>
-                  <td>{m.playerFullName}</td>
-                  <td>{new Date(m.matchDate).toLocaleDateString('pl-PL')}</td>
-                  <td>{m.opponent}</td>
-                  <td><strong>{m.result}</strong></td>
-                  <td>{m.payment} zł</td>
-                  {isCoach && (
-                    <td>
-                      <button className="btn btn-sm btn-outline" onClick={() => handleMatchDelete(m.id)}>Usuń</button>
-                    </td>
-                  )}
+        {/* Matches table */}
+        <div className="bg-surface border border-border rounded-xl overflow-hidden">
+          {matches.length === 0 ? (
+            <p className="text-center text-muted py-12">Brak meczów ligowych</p>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="text-left px-4 py-3 text-xs text-muted uppercase tracking-wide">Zawodnik</th>
+                  <th className="text-left px-4 py-3 text-xs text-muted uppercase tracking-wide">Data</th>
+                  <th className="text-left px-4 py-3 text-xs text-muted uppercase tracking-wide hidden sm:table-cell">Przeciwnik</th>
+                  <th className="text-left px-4 py-3 text-xs text-muted uppercase tracking-wide">Wynik</th>
+                  <th className="text-left px-4 py-3 text-xs text-muted uppercase tracking-wide">Wypłata</th>
+                  {isCoach && <th className="px-4 py-3 text-xs text-muted uppercase tracking-wide">Akcje</th>}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+              </thead>
+              <tbody>
+                {matches.map(m => (
+                  <tr key={m.id} className="border-b border-border/50 hover:bg-white/5 transition-colors last:border-0">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2.5">
+                        <Avatar firstName={m.playerFullName?.split(' ')[0]} lastName={m.playerFullName?.split(' ')[1]} size="sm" />
+                        <span className="text-white font-medium">{m.playerFullName}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-muted whitespace-nowrap">
+                      {new Date(m.matchDate).toLocaleDateString('pl-PL')}
+                    </td>
+                    <td className="px-4 py-3 text-muted hidden sm:table-cell">{m.opponent}</td>
+                    <td className="px-4 py-3">
+                      <span className="font-mono font-bold text-white bg-surface border border-border px-2 py-0.5 rounded text-xs">{m.result}</span>
+                    </td>
+                    <td className="px-4 py-3 text-white font-semibold">{m.payment} zł</td>
+                    {isCoach && (
+                      <td className="px-4 py-3 text-center">
+                        <button onClick={() => handleMatchDelete(m.id)}
+                          className="text-muted hover:text-red-400 transition-colors text-base" title="Usuń">
+                          🗑
+                        </button>
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
       </div>
     </div>
   );
