@@ -1,29 +1,51 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const isCoach = user?.role === 'COACH';
 
   function handleLogout() {
     logout();
     navigate('/login');
   }
 
+  const linkCls = ({ isActive }) =>
+    `text-sm font-medium transition-colors pb-0.5 ${
+      isActive
+        ? 'text-accent border-b-2 border-accent'
+        : 'text-muted hover:text-white'
+    }`;
+
   return (
-    <nav className="navbar">
-      <div className="navbar-brand">🏓 PingPong Club</div>
-      <div className="navbar-links">
-        <Link to="/trainings">Treningi</Link>
-        {user?.role === 'COACH' && <Link to="/players">Zawodnicy</Link>}
-        <Link to="/finances">Finanse</Link>
-      </div>
-      <div className="navbar-user">
-        <span className={`role-badge ${user?.role === 'COACH' ? 'coach' : 'player'}`}>
-          {user?.role === 'COACH' ? 'Trener' : 'Zawodnik'}
-        </span>
-        <span className="user-email">{user?.email}</span>
-        <button onClick={handleLogout} className="btn btn-sm btn-outline">Wyloguj</button>
+    <nav className="bg-surface border-b border-border sticky top-0 z-50">
+      <div className="max-w-6xl mx-auto px-6 h-14 flex items-center gap-8">
+        <span className="text-white font-bold text-lg whitespace-nowrap">🏓 PingPong Club</span>
+
+        <div className="flex items-center gap-6 flex-1">
+          <NavLink to="/dashboard" className={linkCls}>Dashboard</NavLink>
+          <NavLink to="/trainings" className={linkCls}>Treningi</NavLink>
+          {isCoach && <NavLink to="/players" className={linkCls}>Zawodnicy</NavLink>}
+          <NavLink to="/finances" className={linkCls}>Finanse</NavLink>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${
+            isCoach
+              ? 'bg-accent/20 text-accent border-accent/30'
+              : 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+          }`}>
+            {isCoach ? 'Trener' : 'Zawodnik'}
+          </span>
+          <span className="text-sm text-muted hidden sm:block">{user?.email}</span>
+          <button
+            onClick={handleLogout}
+            className="text-sm text-muted hover:text-white border border-border px-3 py-1 rounded-lg hover:border-white/30 transition-colors"
+          >
+            Wyloguj
+          </button>
+        </div>
       </div>
     </nav>
   );
