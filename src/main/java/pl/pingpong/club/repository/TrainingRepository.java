@@ -18,7 +18,6 @@ public interface TrainingRepository extends JpaRepository<Training, UUID> {
 
     List<Training> findAllByStatus(TrainingStatus status);
 
-    /** Treningi zawodnika w zadanym przedziale czasowym – używane przez moduł finansowy. */
     @Query("""
             SELECT t FROM Training t
             WHERE t.player.id = :playerId
@@ -32,14 +31,18 @@ public interface TrainingRepository extends JpaRepository<Training, UUID> {
             @Param("status") TrainingStatus status
     );
 
-    /** Sprawdza, czy w danym oknie czasowym trener ma już zaplanowany trening (wykrywanie kolizji). */
-    @Query("""
-            SELECT COUNT(t) > 0 FROM Training t
-            WHERE t.coach.id = :coachId
-              AND t.status != pl.pingpong.club.model.TrainingStatus.CANCELLED
-              AND t.scheduledAt < :end
-              AND FUNCTION('timestampadd', 'MINUTE', t.durationMinutes, t.scheduledAt) > :start
-            """)
+    /**
+     * Natywne SQL (PostgreSQL) do wykrywania nakładania się terminów trenera.
+     * Warunek nakładania: A.start < B.end AND A.end > B.start
+     */
+    @Query(value = """
+            SELECT COUNT(*) > 0
+            FROM trainings
+            WHERE coach_id = :coachId
+              AND status <> 'CANCELLED'
+              AND scheduled_at < :end
+              AND scheduled_at + (duration_minutes * INTERVAL '1 minute') > :start
+            """, nativeQuery = true)
     boolean existsConflictForCoach(
             @Param("coachId") UUID coachId,
             @Param("start") LocalDateTime start,
