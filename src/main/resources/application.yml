@@ -27,6 +27,13 @@ server:
   servlet:
     context-path: /api
 
+app:
+  jwt:
+    # ZMIEŃ ten sekret przed deploymentem na produkcję!
+    # Wygeneruj: openssl rand -base64 64
+    secret: "dGhpcyBpcyBhIHZlcnkgbG9uZyBkZXZlbG9wbWVudCBzZWNyZXQga2V5IGZvciBwaW5ncG9uZyBjbHViIDIwMjQ="
+    expiration-ms: 86400000   # 24h
+
 logging:
   level:
     pl.pingpong.club: DEBUG
