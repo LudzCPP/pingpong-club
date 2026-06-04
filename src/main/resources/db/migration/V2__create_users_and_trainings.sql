@@ -43,15 +43,4 @@ CREATE INDEX idx_trainings_coach_id    ON trainings (coach_id);
 CREATE INDEX idx_trainings_scheduled   ON trainings (scheduled_at);
 CREATE INDEX idx_trainings_status      ON trainings (status);
 
--- ============================================================
--- Dane startowe: konto trenera (hasło: Coach123! → bcrypt)
--- ============================================================
-INSERT INTO users (id, first_name, last_name, email, password, role)
-VALUES (
-    gen_random_uuid(),
-    'Admin',
-    'Trener',
-    'trener@pingpong.pl',
-    '$2a$12$o9RtYpEhLCiXbS7.eFw3g.7Dkq.F1Xl3KXXI4R2mXtIEJpzgC6Vy',
-    'COACH'
-);
+-- Konto startowe trenera tworzone przez DataInitializer (poprawny hash BCrypt)
