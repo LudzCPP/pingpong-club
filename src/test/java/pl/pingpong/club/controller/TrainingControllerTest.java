@@ -18,7 +18,9 @@ import pl.pingpong.club.config.TestSecurityConfig;
 import pl.pingpong.club.dto.TrainingRequest;
 import pl.pingpong.club.dto.TrainingResponse;
 import pl.pingpong.club.model.TrainingStatus;
+import pl.pingpong.club.service.AiParseService;
 import pl.pingpong.club.service.TrainingService;
+import pl.pingpong.club.service.UserService;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -49,6 +51,8 @@ class TrainingControllerTest {
     @Autowired ObjectMapper objectMapper;
 
     @MockBean TrainingService trainingService;
+    @MockBean UserService     userService;
+    @MockBean AiParseService  aiParseService;
 
     @Test
     void getTrainings_unauthenticated_returns403() throws Exception {
