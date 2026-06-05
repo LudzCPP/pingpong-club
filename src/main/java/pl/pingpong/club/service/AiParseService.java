@@ -22,15 +22,29 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+/**
+ * Parsuje tekst/dyktowanie trenera za pomocą dowolnego modelu zgodnego z OpenAI Chat API.
+ *
+ * Domyślna konfiguracja używa Groq (darmowy tier, ~14 000 req/dzień).
+ * Zmiana providera = edycja application.yml (ai.base-url + ai.model).
+ *
+ * Przykłady:
+ *   Groq:   base-url: https://api.groq.com/openai/v1   model: llama-3.3-70b-versatile
+ *   OpenAI: base-url: https://api.openai.com/v1        model: gpt-4o-mini
+ *   Ollama: base-url: http://localhost:11434/v1         model: llama3.2   api-key: ollama
+ */
 @Service
 @RequiredArgsConstructor
-public class AnthropicService {
+public class AiParseService {
 
-    private static final String API_URL = "https://api.anthropic.com/v1/messages";
-    private static final String MODEL   = "claude-haiku-4-5-20251001";
+    @Value("${ai.base-url}")
+    private String baseUrl;
 
-    @Value("${anthropic.api-key:}")
+    @Value("${ai.api-key:}")
     private String apiKey;
+
+    @Value("${ai.model}")
+    private String model;
 
     private final ObjectMapper objectMapper;
     private final HttpClient   httpClient = HttpClient.newHttpClient();
@@ -38,11 +52,11 @@ public class AnthropicService {
     public TrainingParseResponse parseTrainingText(String text, List<UserResponse> players) {
         if (!StringUtils.hasText(apiKey)) {
             throw new BusinessRuleException(
-                "Klucz API Anthropic nie jest skonfigurowany. Ustaw zmienną środowiskową ANTHROPIC_API_KEY."
+                "Klucz AI API nie jest skonfigurowany. Ustaw zmienną środowiskową AI_API_KEY."
             );
         }
-        String claudeJson = callApi(buildPrompt(text, players));
-        return parseResponse(claudeJson, players);
+        String responseText = callApi(buildPrompt(text, players));
+        return parseResponse(responseText, players);
     }
 
     // ── prompt ─────────────────────────────────────────────────────────────────
@@ -85,37 +99,36 @@ public class AnthropicService {
                 """.formatted(now, playerList, text.replace("\"", "\\\""));
     }
 
-    // ── HTTP call ───────────────────────────────────────────────────────────────
+    // ── HTTP call (OpenAI-compatible format) ────────────────────────────────────
 
     private String callApi(String prompt) {
         try {
             String body = objectMapper.writeValueAsString(Map.of(
-                    "model", MODEL,
+                    "model", model,
                     "max_tokens", 400,
                     "messages", List.of(Map.of("role", "user", "content", prompt))
             ));
 
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(API_URL))
+                    .uri(URI.create(baseUrl + "/chat/completions"))
                     .header("Content-Type", "application/json")
-                    .header("x-api-key", apiKey)
-                    .header("anthropic-version", "2023-06-01")
+                    .header("Authorization", "Bearer " + apiKey)
                     .POST(HttpRequest.BodyPublishers.ofString(body))
                     .build();
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() != 200) {
-                throw new BusinessRuleException("Błąd API Anthropic (HTTP " + response.statusCode() + ").");
+                throw new BusinessRuleException("Błąd AI API (HTTP " + response.statusCode() + "): " + response.body());
             }
 
             JsonNode root = objectMapper.readTree(response.body());
-            return root.path("content").get(0).path("text").asText();
+            return root.path("choices").get(0).path("message").path("content").asText();
 
         } catch (BusinessRuleException e) {
             throw e;
         } catch (Exception e) {
-            throw new BusinessRuleException("Błąd połączenia z API Anthropic: " + e.getMessage());
+            throw new BusinessRuleException("Błąd połączenia z AI API: " + e.getMessage());
         }
     }
 
@@ -123,17 +136,16 @@ public class AnthropicService {
 
     private TrainingParseResponse parseResponse(String json, List<UserResponse> players) {
         try {
-            // Strip markdown fences if model added them anyway
             String cleaned = json.replaceAll("(?s)```json\\s*|```\\s*", "").trim();
             JsonNode node = objectMapper.readTree(cleaned);
 
             UUID   playerId   = resolvePlayer(node, players);
             String playerName = resolvePlayerName(playerId, node, players);
 
-            LocalDateTime scheduledAt  = parseDateTime(node.path("scheduledAt").asText(null));
-            Integer       duration     = parseInteger(node.path("durationMinutes"));
-            BigDecimal    hourlyRate   = parseDecimal(node.path("hourlyRate"));
-            String        notes        = node.path("notes").asText("");
+            LocalDateTime scheduledAt = parseDateTime(node.path("scheduledAt").asText(null));
+            Integer       duration    = parseInteger(node.path("durationMinutes"));
+            BigDecimal    hourlyRate  = parseDecimal(node.path("hourlyRate"));
+            String        notes       = node.path("notes").asText("");
 
             return new TrainingParseResponse(playerId, playerName, scheduledAt, duration, hourlyRate, notes);
 
@@ -149,15 +161,11 @@ public class AnthropicService {
         if (idStr != null && !idStr.equals("null") && !idStr.isBlank()) {
             try {
                 UUID uuid = UUID.fromString(idStr);
-                boolean exists = players.stream().anyMatch(p -> p.id().equals(uuid));
-                if (exists) return uuid;
+                if (players.stream().anyMatch(p -> p.id().equals(uuid))) return uuid;
             } catch (IllegalArgumentException ignored) {}
         }
-
-        // Fallback: match by playerName field
         String name = node.path("playerName").asText(null);
         if (name == null || name.equals("null") || name.isBlank()) return null;
-
         String nameLower = name.toLowerCase();
         return players.stream()
                 .filter(p -> {
@@ -182,11 +190,7 @@ public class AnthropicService {
 
     private LocalDateTime parseDateTime(String value) {
         if (value == null || value.equals("null") || value.isBlank()) return null;
-        try {
-            return LocalDateTime.parse(value);
-        } catch (Exception ignored) {
-            return null;
-        }
+        try { return LocalDateTime.parse(value); } catch (Exception ignored) { return null; }
     }
 
     private Integer parseInteger(JsonNode node) {
