@@ -15,8 +15,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import pl.pingpong.club.config.JwtAuthFilter;
 import pl.pingpong.club.config.SecurityConfig;
 import pl.pingpong.club.config.TestSecurityConfig;
+import pl.pingpong.club.dto.ChangePasswordRequest;
 import pl.pingpong.club.dto.CreateCoachRequest;
 import pl.pingpong.club.dto.UserResponse;
+import pl.pingpong.club.exception.BusinessRuleException;
 import pl.pingpong.club.model.Role;
 import pl.pingpong.club.service.UserService;
 
@@ -25,6 +27,8 @@ import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -114,6 +118,44 @@ class UserControllerTest {
 
         mockMvc.perform(delete("/users/{id}", id).with(csrf()))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(username = "player@test.pl", roles = "PLAYER")
+    void changePassword_validRequest_returns204() throws Exception {
+        doNothing().when(userService).changePassword(anyString(), any());
+
+        mockMvc.perform(patch("/users/me/password")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                new ChangePasswordRequest("oldPass1", "newPass1"))))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @WithMockUser(username = "player@test.pl", roles = "PLAYER")
+    void changePassword_wrongCurrent_returns422() throws Exception {
+        doThrow(new BusinessRuleException("nieprawidłowe"))
+                .when(userService).changePassword(anyString(), any());
+
+        mockMvc.perform(patch("/users/me/password")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                new ChangePasswordRequest("wrongPass", "newPass1"))))
+                .andExpect(status().isUnprocessableEntity());
+    }
+
+    @Test
+    @WithMockUser(username = "player@test.pl", roles = "PLAYER")
+    void changePassword_tooShortNew_returns400() throws Exception {
+        mockMvc.perform(patch("/users/me/password")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                new ChangePasswordRequest("oldPass1", "abc"))))
+                .andExpect(status().isBadRequest());
     }
 
     private UserResponse playerResponse() {
