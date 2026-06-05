@@ -11,7 +11,7 @@ const FILTER_LABEL = { Wszystkie: 'Wszystkie', SCHEDULED: 'Zaplanowane', COMPLET
 const inputCls = 'bg-base border border-border rounded-lg px-3 py-2 text-white text-sm placeholder-muted focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors w-full';
 const labelCls = 'text-xs font-medium text-muted uppercase tracking-wide';
 
-const EMPTY_FORM = { playerId: '', scheduledAt: '', durationMinutes: 60, hourlyRate: '', notes: '' };
+const EMPTY_FORM = { playerId: '', scheduledAt: '', durationMinutes: 60, totalPrice: '', notes: '' };
 
 function formatForDatetimeInput(isoString) {
   if (!isoString) return '';
@@ -106,7 +106,7 @@ export default function TrainingsPage() {
         playerId:        data.playerId ?? '',
         scheduledAt:     formatForDatetimeInput(data.scheduledAt),
         durationMinutes: data.durationMinutes ?? 60,
-        hourlyRate:      data.hourlyRate != null ? String(data.hourlyRate) : '',
+        totalPrice:      data.totalPrice != null ? String(data.totalPrice) : '',
         notes:           data.notes ?? '',
       });
 
@@ -131,10 +131,14 @@ export default function TrainingsPage() {
     setFormError('');
     setSaving(true);
     try {
+      const duration = Number(form.durationMinutes);
+      const total = Number(form.totalPrice);
       await client.post('/trainings', {
-        ...form,
-        durationMinutes: Number(form.durationMinutes),
-        hourlyRate: Number(form.hourlyRate),
+        playerId: form.playerId,
+        scheduledAt: form.scheduledAt,
+        durationMinutes: duration,
+        hourlyRate: duration > 0 ? (total * 60) / duration : total,
+        notes: form.notes,
       });
       setShowForm(false);
       setShowAiPanel(false);
@@ -305,8 +309,8 @@ export default function TrainingsPage() {
               <input type="number" min="15" max="480" value={form.durationMinutes} onChange={e => setForm({ ...form, durationMinutes: e.target.value })} required className={inputCls} />
             </div>
             <div className="space-y-1.5">
-              <label className={labelCls}>Stawka (zł/h)</label>
-              <input type="number" min="0" step="0.01" value={form.hourlyRate} onChange={e => setForm({ ...form, hourlyRate: e.target.value })} required className={inputCls} />
+              <label className={labelCls}>Kwota za trening (zł)</label>
+              <input type="number" min="0" step="0.01" value={form.totalPrice} onChange={e => setForm({ ...form, totalPrice: e.target.value })} required className={inputCls} />
             </div>
             <div className="space-y-1.5 sm:col-span-2">
               <label className={labelCls}>Notatki</label>
@@ -350,8 +354,7 @@ export default function TrainingsPage() {
                 <th className="text-left px-4 py-3 text-xs text-muted uppercase tracking-wide">Zawodnik</th>
                 <th className="text-left px-4 py-3 text-xs text-muted uppercase tracking-wide">Data</th>
                 <th className="text-left px-4 py-3 text-xs text-muted uppercase tracking-wide hidden sm:table-cell">Czas</th>
-                <th className="text-left px-4 py-3 text-xs text-muted uppercase tracking-wide hidden md:table-cell">Stawka</th>
-                <th className="text-left px-4 py-3 text-xs text-muted uppercase tracking-wide">Koszt</th>
+                <th className="text-left px-4 py-3 text-xs text-muted uppercase tracking-wide">Kwota</th>
                 <th className="text-left px-4 py-3 text-xs text-muted uppercase tracking-wide">Status</th>
                 {isCoach && <th className="px-4 py-3 text-xs text-muted uppercase tracking-wide">Akcje</th>}
               </tr>
@@ -372,8 +375,11 @@ export default function TrainingsPage() {
                     {new Date(t.scheduledAt).toLocaleString('pl-PL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                   </td>
                   <td className="px-4 py-3 text-muted hidden sm:table-cell">{t.durationMinutes} min</td>
-                  <td className="px-4 py-3 text-muted hidden md:table-cell">{t.hourlyRate} zł/h</td>
-                  <td className="px-4 py-3 text-white font-semibold">{t.totalPrice ?? '—'} zł</td>
+                  <td className="px-4 py-3 text-white font-semibold">
+                    {t.totalPrice != null
+                      ? `${Number(t.totalPrice).toFixed(0)} zł`
+                      : `${((t.hourlyRate * t.durationMinutes) / 60).toFixed(0)} zł`}
+                  </td>
                   <td className="px-4 py-3"><StatusBadge status={t.status} /></td>
                   {isCoach && (
                     <td className="px-4 py-3">
