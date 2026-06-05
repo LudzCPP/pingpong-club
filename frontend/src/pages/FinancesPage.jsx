@@ -3,6 +3,7 @@ import client from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import Avatar from '../components/Avatar';
 import StatCard from '../components/StatCard';
+import { Dumbbell, Trophy, Banknote, Plus, X, Trash2 } from 'lucide-react';
 
 const inputCls = 'bg-base border border-border rounded-lg px-3 py-2 text-white text-sm placeholder-muted focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors w-full';
 const labelCls = 'text-xs font-medium text-muted uppercase tracking-wide';
@@ -73,9 +74,9 @@ export default function FinancesPage() {
       <div>
         <h1 className="text-2xl font-bold text-white mb-6">Finanse</h1>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <StatCard icon="🏓" value={`${Number(summary?.totalTrainingEarnings ?? 0).toFixed(0)} zł`} label={`Treningi (${summary?.completedTrainingsCount ?? 0})`} />
-          <StatCard icon="🏆" value={`${Number(summary?.totalMatchPayments ?? 0).toFixed(0)} zł`} label={`Mecze (${summary?.matchesCount ?? 0})`} />
-          <StatCard icon="💰" value={`${Number(summary?.grandTotal ?? 0).toFixed(0)} zł`} label="Łącznie" accent />
+          <StatCard icon={Dumbbell} value={`${Number(summary?.totalTrainingEarnings ?? 0).toFixed(0)} zł`} label={`Treningi (${summary?.completedTrainingsCount ?? 0})`} />
+          <StatCard icon={Trophy} value={`${Number(summary?.totalMatchPayments ?? 0).toFixed(0)} zł`} label={`Mecze (${summary?.matchesCount ?? 0})`} />
+          <StatCard icon={Banknote} value={`${Number(summary?.grandTotal ?? 0).toFixed(0)} zł`} label="Łącznie" accent />
         </div>
 
         {/* Date filter */}
@@ -101,8 +102,8 @@ export default function FinancesPage() {
           <h2 className="text-white font-semibold text-lg">Mecze ligowe</h2>
           {isCoach && (
             <button onClick={() => setShowMatchForm(!showMatchForm)}
-              className="bg-accent hover:bg-green-600 text-white font-semibold px-4 py-2 rounded-lg transition-colors text-sm">
-              {showMatchForm ? '✕ Anuluj' : '+ Dodaj mecz'}
+              className="flex items-center gap-2 bg-accent hover:bg-green-600 text-white font-semibold px-4 py-2 rounded-lg transition-colors text-sm">
+              {showMatchForm ? <><X size={14} /> Anuluj</> : <><Plus size={14} /> Dodaj mecz</>}
             </button>
           )}
         </div>
@@ -178,14 +179,14 @@ export default function FinancesPage() {
                     </td>
                     <td className="px-4 py-3 text-muted hidden sm:table-cell">{m.opponent}</td>
                     <td className="px-4 py-3">
-                      <span className="font-mono font-bold text-white bg-surface border border-border px-2 py-0.5 rounded text-xs">{m.result}</span>
+                      <span className="font-mono font-bold text-white bg-base border border-border px-2 py-0.5 rounded text-xs">{m.result}</span>
                     </td>
                     <td className="px-4 py-3 text-white font-semibold">{m.payment} zł</td>
                     {isCoach && (
                       <td className="px-4 py-3 text-center">
                         <button onClick={() => handleMatchDelete(m.id)}
-                          className="text-muted hover:text-red-400 transition-colors text-base" title="Usuń">
-                          🗑
+                          className="text-muted hover:text-red-400 transition-colors p-1.5 rounded hover:bg-red-400/10" title="Usuń">
+                          <Trash2 size={14} />
                         </button>
                       </td>
                     )}

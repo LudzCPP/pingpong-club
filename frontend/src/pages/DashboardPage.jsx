@@ -5,6 +5,7 @@ import StatCard from '../components/StatCard';
 import StatusBadge from '../components/StatusBadge';
 import Avatar from '../components/Avatar';
 import { useAuth } from '../context/AuthContext';
+import { CalendarCheck, CalendarDays, Banknote, Users, Check, X, ClipboardList } from 'lucide-react';
 
 function todayStr() {
   return new Date().toISOString().split('T')[0];
@@ -87,7 +88,7 @@ export default function DashboardPage() {
       {/* Hero */}
       <div className="bg-surface border border-border rounded-2xl px-8 py-6 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white">Dzień dobry, {firstName}! 🏓</h1>
+          <h1 className="text-3xl font-bold text-white">Dzień dobry, {firstName}</h1>
           <p className="text-muted mt-1 capitalize">{todayPolish()}</p>
         </div>
         {isCoach && (
@@ -102,11 +103,11 @@ export default function DashboardPage() {
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon="📅" value={todayTrainings.length} label="Treningi dziś" />
-        <StatCard icon="📆" value={weekTrainings.length} label="W tym tygodniu" />
+        <StatCard icon={CalendarCheck} value={todayTrainings.length} label="Treningi dziś" />
+        <StatCard icon={CalendarDays} value={weekTrainings.length} label="W tym tygodniu" />
         {isCoach && (
           <StatCard
-            icon="💰"
+            icon={Banknote}
             value={`${Number(summary?.grandTotal ?? 0).toFixed(0)} zł`}
             label="Zarobki w tym miesiącu"
             accent
@@ -114,7 +115,7 @@ export default function DashboardPage() {
         )}
         {isCoach && (
           <StatCard
-            icon="👥"
+            icon={Users}
             value={players.filter(p => p.active).length}
             label="Aktywni zawodnicy"
           />
@@ -125,11 +126,12 @@ export default function DashboardPage() {
         {/* Dziś na korcie */}
         <div className="bg-surface border border-border rounded-xl p-6">
           <h2 className="text-white font-semibold text-lg mb-4 flex items-center gap-2">
-            🏓 Dziś na korcie
-            <span className="text-xs bg-accent/20 text-accent px-2 py-0.5 rounded-full">{todayTrainings.length}</span>
+            <CalendarCheck size={18} className="text-accent" />
+            Dziś na korcie
+            <span className="text-xs bg-accent/20 text-accent px-2 py-0.5 rounded-full ml-1">{todayTrainings.length}</span>
           </h2>
           {todayTrainings.length === 0 ? (
-            <p className="text-muted text-sm py-4 text-center">Brak treningów na dziś 🎉</p>
+            <p className="text-muted text-sm py-4 text-center">Brak treningów na dziś</p>
           ) : (
             <ul className="space-y-3">
               {todayTrainings.map(t => (
@@ -142,11 +144,15 @@ export default function DashboardPage() {
                     </p>
                   </div>
                   {isCoach && (
-                    <div className="flex gap-1.5">
+                    <div className="flex gap-1">
                       <button onClick={() => handleComplete(t.id)} title="Zakończ"
-                        className="text-green-400 hover:bg-green-400/10 p-1.5 rounded transition-colors text-sm">✓</button>
+                        className="text-green-400 hover:bg-green-400/10 p-1.5 rounded transition-colors">
+                        <Check size={14} />
+                      </button>
                       <button onClick={() => handleCancel(t.id)} title="Odwołaj"
-                        className="text-red-400 hover:bg-red-400/10 p-1.5 rounded transition-colors text-sm">✕</button>
+                        className="text-red-400 hover:bg-red-400/10 p-1.5 rounded transition-colors">
+                        <X size={14} />
+                      </button>
                     </div>
                   )}
                 </li>
@@ -157,7 +163,10 @@ export default function DashboardPage() {
 
         {/* Ostatnie treningi */}
         <div className="bg-surface border border-border rounded-xl p-6">
-          <h2 className="text-white font-semibold text-lg mb-4">📋 Ostatnie treningi</h2>
+          <h2 className="text-white font-semibold text-lg mb-4 flex items-center gap-2">
+            <ClipboardList size={18} className="text-slate-400" />
+            Ostatnie treningi
+          </h2>
           {recent.length === 0 ? (
             <p className="text-muted text-sm py-4 text-center">Brak treningów</p>
           ) : (

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import client from '../api/client';
 import Avatar from '../components/Avatar';
+import { Plus, X } from 'lucide-react';
 
 const inputCls = 'bg-base border border-border rounded-lg px-3 py-2 text-white text-sm placeholder-muted focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors w-full';
 const labelCls = 'text-xs font-medium text-muted uppercase tracking-wide';
@@ -55,9 +56,9 @@ export default function PlayersPage() {
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="bg-accent hover:bg-green-600 text-white font-semibold px-4 py-2 rounded-lg transition-colors text-sm"
+          className="flex items-center gap-2 bg-accent hover:bg-green-600 text-white font-semibold px-4 py-2 rounded-lg transition-colors text-sm"
         >
-          {showForm ? '✕ Anuluj' : '+ Dodaj zawodnika'}
+          {showForm ? <><X size={14} /> Anuluj</> : <><Plus size={14} /> Dodaj zawodnika</>}
         </button>
       </div>
 

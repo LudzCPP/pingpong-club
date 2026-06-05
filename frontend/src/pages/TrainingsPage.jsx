@@ -3,6 +3,7 @@ import client from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import Avatar from '../components/Avatar';
 import StatusBadge from '../components/StatusBadge';
+import { Check, X, Plus } from 'lucide-react';
 
 const FILTERS = ['Wszystkie', 'SCHEDULED', 'COMPLETED', 'CANCELLED'];
 const FILTER_LABEL = { Wszystkie: 'Wszystkie', SCHEDULED: 'Zaplanowane', COMPLETED: 'Zrealizowane', CANCELLED: 'Odwołane' };
@@ -86,9 +87,9 @@ export default function TrainingsPage() {
         {isCoach && (
           <button
             onClick={() => setShowForm(!showForm)}
-            className="bg-accent hover:bg-green-600 text-white font-semibold px-4 py-2 rounded-lg transition-colors text-sm"
+            className="flex items-center gap-2 bg-accent hover:bg-green-600 text-white font-semibold px-4 py-2 rounded-lg transition-colors text-sm"
           >
-            {showForm ? '✕ Anuluj' : '+ Nowy trening'}
+            {showForm ? <><X size={14} /> Anuluj</> : <><Plus size={14} /> Nowy trening</>}
           </button>
         )}
       </div>
@@ -186,9 +187,13 @@ export default function TrainingsPage() {
                       {t.status === 'SCHEDULED' && (
                         <div className="flex gap-1">
                           <button onClick={() => handleStatus(t.id, 'complete')} title="Zakończ"
-                            className="text-green-400 hover:bg-green-400/10 px-2 py-1 rounded transition-colors">✓</button>
+                            className="text-green-400 hover:bg-green-400/10 p-1.5 rounded transition-colors">
+                            <Check size={14} />
+                          </button>
                           <button onClick={() => handleStatus(t.id, 'cancel')} title="Odwołaj"
-                            className="text-red-400 hover:bg-red-400/10 px-2 py-1 rounded transition-colors">✕</button>
+                            className="text-red-400 hover:bg-red-400/10 p-1.5 rounded transition-colors">
+                            <X size={14} />
+                          </button>
                         </div>
                       )}
                     </td>
