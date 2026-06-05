@@ -3,6 +3,7 @@ import client from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import Avatar from '../components/Avatar';
 import StatusBadge from '../components/StatusBadge';
+import ConfirmDialog from '../components/ConfirmDialog';
 import { Check, X, Plus, Mic, MicOff, Sparkles, Loader, Banknote } from 'lucide-react';
 
 const FILTERS = ['Wszystkie', 'SCHEDULED', 'COMPLETED', 'CANCELLED'];
@@ -36,6 +37,9 @@ export default function TrainingsPage() {
 
   // Complete with notes modal
   const [completing, setCompleting] = useState(null); // { id, notes }
+
+  // Cancel confirm dialog
+  const [confirmCancel, setConfirmCancel] = useState(null); // training id
 
   // AI panel
   const [showAiPanel, setShowAiPanel] = useState(false);
@@ -161,6 +165,7 @@ export default function TrainingsPage() {
 
   async function handleCancel(id) {
     await client.patch(`/trainings/${id}/cancel`);
+    setConfirmCancel(null);
     await fetchTrainings();
   }
 
@@ -191,6 +196,14 @@ export default function TrainingsPage() {
 
   return (
     <>
+    {confirmCancel && (
+      <ConfirmDialog
+        message="Odwołać ten trening? Tej akcji nie można cofnąć."
+        confirmLabel="Odwołaj trening"
+        onConfirm={() => handleCancel(confirmCancel)}
+        onCancel={() => setConfirmCancel(null)}
+      />
+    )}
     {/* Complete training modal */}
     {completing && (
       <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
@@ -432,7 +445,7 @@ export default function TrainingsPage() {
                             className="text-green-400 hover:bg-green-400/10 p-1.5 rounded transition-colors">
                             <Check size={14} />
                           </button>
-                          <button onClick={() => handleCancel(t.id)} title="Odwołaj"
+                          <button onClick={() => setConfirmCancel(t.id)} title="Odwołaj"
                             className="text-red-400 hover:bg-red-400/10 p-1.5 rounded transition-colors">
                             <X size={14} />
                           </button>
