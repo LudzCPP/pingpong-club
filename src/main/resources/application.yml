@@ -57,7 +57,7 @@ ai:
   # Ollama:  base-url: http://localhost:11434/v1    model: llama3.2   api-key: ollama
 
 app:
-  frontend-url: http://localhost:5173
+  frontend-url: http://localhost:5174
   jwt:
     # ZMIEŃ ten sekret przed deploymentem na produkcję!
     # Wygeneruj: openssl rand -base64 64
