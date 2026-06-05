@@ -28,8 +28,15 @@ public class AuthController {
     @PostMapping("/invite")
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasRole('COACH')")
-    public InviteResponse generateInvite(@AuthenticationPrincipal UserDetails coach) {
-        return authService.generateInvite(coach.getUsername());
+    public InviteResponse generateInvite(@AuthenticationPrincipal UserDetails caller) {
+        return authService.generateInvite(caller.getUsername());
+    }
+
+    @PostMapping("/invite/coaches")
+    @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasRole('ADMIN')")
+    public InviteResponse generateCoachInvite(@AuthenticationPrincipal UserDetails admin) {
+        return authService.generateCoachInvite(admin.getUsername());
     }
 
     @PostMapping("/register")

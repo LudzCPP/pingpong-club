@@ -104,7 +104,8 @@ public class TrainingController {
      */
     @PostMapping("/parse")
     @PreAuthorize("hasRole('COACH')")
-    public TrainingParseResponse parseTraining(@Valid @RequestBody TrainingParseRequest request) {
-        return aiParseService.parseTrainingText(request.text(), userService.getAllPlayers());
+    public TrainingParseResponse parseTraining(@Valid @RequestBody TrainingParseRequest request,
+                                               @AuthenticationPrincipal UserDetails user) {
+        return aiParseService.parseTrainingText(request.text(), userService.getAllPlayers(user.getUsername()));
     }
 }

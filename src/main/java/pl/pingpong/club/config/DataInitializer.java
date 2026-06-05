@@ -28,9 +28,9 @@ public class DataInitializer implements ApplicationRunner {
                     .lastName("Trener")
                     .email("trener@pingpong.pl")
                     .password(passwordEncoder.encode("Coach123!"))
-                    .role(Role.COACH)
+                    .role(Role.ADMIN)
                     .build());
-            log.info("Utworzono domyślne konto trenera: trener@pingpong.pl");
+            log.info("Utworzono domyślne konto admina: trener@pingpong.pl");
         }
     }
 }

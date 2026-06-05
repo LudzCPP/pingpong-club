@@ -35,7 +35,7 @@ public class TrainingService {
     @Transactional
     public TrainingResponse createTraining(TrainingRequest request, String coachEmail) {
         User coach = findByEmail(coachEmail);
-        User player = findPlayerById(request.playerId());
+        User player = findPlayerById(request.playerId(), coach);
 
         LocalDateTime end = request.scheduledAt().plusMinutes(request.durationMinutes());
         assertNoCoachConflict(coach.getId(), request.scheduledAt(), end);
@@ -61,13 +61,10 @@ public class TrainingService {
         Training training = findById(id);
         assertEditable(training);
 
-        User player = findPlayerById(request.playerId());
+        User coach = findByEmail(coachEmail);
+        User player = findPlayerById(request.playerId(), coach);
 
         LocalDateTime end = request.scheduledAt().plusMinutes(request.durationMinutes());
-        // Wykluczamy edytowany trening z kontroli kolizji
-        User coach = findByEmail(coachEmail);
-        boolean conflict = trainingRepository.existsConflictForCoach(coach.getId(), request.scheduledAt(), end)
-                && !training.getCoach().getId().equals(coach.getId());
 
         // Prostszy i pewniejszy check: sprawdzamy kolizje z wyłączeniem bieżącego rekordu
         if (trainingRepository.existsConflictForCoach(coach.getId(), request.scheduledAt(), end)) {
@@ -126,20 +123,26 @@ public class TrainingService {
 
     // ------------------------------------------------------------------ ODCZYT
 
-    /** COACH widzi wszystkie treningi, PLAYER widzi tylko swoje. */
+    /** ADMIN widzi wszystkie, COACH widzi swoje, PLAYER widzi tylko swoje. */
     public List<TrainingResponse> getTrainings(String currentUserEmail) {
         User user = findByEmail(currentUserEmail);
-        List<Training> trainings = user.getRole() == Role.COACH
-                ? trainingRepository.findAll()
-                : trainingRepository.findAllByPlayerId(user.getId());
+        List<Training> trainings = switch (user.getRole()) {
+            case ADMIN  -> trainingRepository.findAll();
+            case COACH  -> trainingRepository.findAllByCoachId(user.getId());
+            case PLAYER -> trainingRepository.findAllByPlayerId(user.getId());
+        };
         return trainings.stream().map(trainingMapper::toResponse).toList();
     }
 
-    /** COACH widzi każdy trening, PLAYER widzi tylko swój – zwraca 404 zamiast 403. */
+    /** ADMIN widzi każdy, COACH widzi swoje, PLAYER widzi tylko swój – 404 zamiast 403. */
     public TrainingResponse getTrainingById(UUID id, String currentUserEmail) {
         Training training = findById(id);
         User user = findByEmail(currentUserEmail);
 
+        if (user.getRole() == Role.COACH
+                && !training.getCoach().getId().equals(user.getId())) {
+            throw new ResourceNotFoundException("Nie znaleziono treningu o ID: " + id);
+        }
         if (user.getRole() == Role.PLAYER
                 && !training.getPlayer().getId().equals(user.getId())) {
             throw new ResourceNotFoundException("Nie znaleziono treningu o ID: " + id);
@@ -160,11 +163,15 @@ public class TrainingService {
                 .orElseThrow(() -> new ResourceNotFoundException("Nie znaleziono użytkownika: " + email));
     }
 
-    private User findPlayerById(UUID playerId) {
+    private User findPlayerById(UUID playerId, User caller) {
         User player = userRepository.findById(playerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Nie znaleziono zawodnika o ID: " + playerId));
         if (player.getRole() != Role.PLAYER) {
             throw new BusinessRuleException("Użytkownik " + player.getEmail() + " nie jest zawodnikiem");
+        }
+        if (caller.getRole() == Role.COACH
+                && !userRepository.existsCoachPlayerLink(caller.getId(), playerId)) {
+            throw new ResourceNotFoundException("Nie znaleziono zawodnika o ID: " + playerId);
         }
         return player;
     }

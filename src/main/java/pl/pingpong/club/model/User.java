@@ -7,7 +7,9 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -43,6 +45,21 @@ public class User implements UserDetails {
     @Column(nullable = false)
     @Builder.Default
     private boolean active = true;
+
+    // Zawodnicy przypisani do tego trenera (wypełniane tylko dla COACH)
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "coach_player",
+            joinColumns = @JoinColumn(name = "coach_id"),
+            inverseJoinColumns = @JoinColumn(name = "player_id")
+    )
+    @Builder.Default
+    private Set<User> players = new HashSet<>();
+
+    // Trenerzy przypisani do tego zawodnika (wypełniane tylko dla PLAYER)
+    @ManyToMany(mappedBy = "players", fetch = FetchType.LAZY)
+    @Builder.Default
+    private Set<User> coaches = new HashSet<>();
 
     // --- UserDetails ---
 

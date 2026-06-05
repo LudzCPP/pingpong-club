@@ -38,14 +38,14 @@ public class UserController {
         userService.changePassword(user.getUsername(), request);
     }
 
-    /** GET /api/users/players — lista wszystkich zawodników (tylko COACH). */
+    /** GET /api/users/players — lista zawodników: COACH widzi swoich, ADMIN widzi wszystkich. */
     @GetMapping("/players")
     @PreAuthorize("hasRole('COACH')")
-    public List<UserResponse> getPlayers() {
-        return userService.getAllPlayers();
+    public List<UserResponse> getPlayers(@AuthenticationPrincipal UserDetails caller) {
+        return userService.getAllPlayers(caller.getUsername());
     }
 
-    /** GET /api/users/coaches — lista wszystkich trenerów (tylko COACH). */
+    /** GET /api/users/coaches — lista trenerów (COACH i wyżej). */
     @GetMapping("/coaches")
     @PreAuthorize("hasRole('COACH')")
     public List<UserResponse> getCoaches() {
@@ -53,19 +53,19 @@ public class UserController {
     }
 
     /**
-     * POST /api/users/coaches — tworzenie konta trenera (tylko COACH).
-     * Rejestracja publiczna zawsze tworzy PLAYER; COACH tworzy innych trenerów tutaj.
+     * POST /api/users/coaches — tworzenie konta trenera (tylko ADMIN).
+     * Trenerzy rejestrują się przez link zaproszenia wygenerowany przez ADMIN.
      */
     @PostMapping("/coaches")
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasRole('COACH')")
+    @PreAuthorize("hasRole('ADMIN')")
     public UserResponse createCoach(@Valid @RequestBody CreateCoachRequest request) {
         return userService.createCoach(request);
     }
 
-    /** DELETE /api/users/{id} — dezaktywacja konta (tylko COACH). */
+    /** DELETE /api/users/{id} — dezaktywacja konta (tylko ADMIN). */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('COACH')")
+    @PreAuthorize("hasRole('ADMIN')")
     public UserResponse deactivateUser(@PathVariable UUID id) {
         return userService.deactivateUser(id);
     }

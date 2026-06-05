@@ -1,0 +1,2 @@
+ALTER TABLE invite_tokens
+    ADD COLUMN target_role VARCHAR(20) NOT NULL DEFAULT 'PLAYER';
