@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import pl.pingpong.club.dto.ChangePasswordRequest;
 import pl.pingpong.club.dto.CreateCoachRequest;
 import pl.pingpong.club.dto.UserResponse;
 import pl.pingpong.club.exception.BusinessRuleException;
@@ -56,6 +57,16 @@ public class UserService {
                 .build();
 
         return userMapper.toResponse(userRepository.save(coach));
+    }
+
+    @Transactional
+    public void changePassword(String email, ChangePasswordRequest request) {
+        User user = findByEmail(email);
+        if (!passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
+            throw new BusinessRuleException("Podane aktualne hasło jest nieprawidłowe");
+        }
+        user.setPassword(passwordEncoder.encode(request.newPassword()));
+        userRepository.save(user);
     }
 
     @Transactional

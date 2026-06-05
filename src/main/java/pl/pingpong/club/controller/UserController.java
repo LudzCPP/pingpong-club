@@ -7,6 +7,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import pl.pingpong.club.dto.ChangePasswordRequest;
 import pl.pingpong.club.dto.CreateCoachRequest;
 import pl.pingpong.club.dto.UserResponse;
 import pl.pingpong.club.service.UserService;
@@ -25,6 +26,16 @@ public class UserController {
     @GetMapping("/me")
     public UserResponse getMyProfile(@AuthenticationPrincipal UserDetails user) {
         return userService.getMyProfile(user.getUsername());
+    }
+
+    /** PATCH /api/users/me/password — zmiana hasła zalogowanego użytkownika. */
+    @PatchMapping("/me/password")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void changePassword(
+            @AuthenticationPrincipal UserDetails user,
+            @Valid @RequestBody ChangePasswordRequest request
+    ) {
+        userService.changePassword(user.getUsername(), request);
     }
 
     /** GET /api/users/players — lista wszystkich zawodników (tylko COACH). */

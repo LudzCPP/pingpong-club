@@ -6,6 +6,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import pl.pingpong.club.dto.ChangePasswordRequest;
 import pl.pingpong.club.dto.CreateCoachRequest;
 import pl.pingpong.club.dto.UserResponse;
 import pl.pingpong.club.exception.BusinessRuleException;
@@ -114,6 +115,32 @@ class UserServiceTest {
 
         assertThatThrownBy(() -> userService.deactivateUser(id))
                 .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void changePassword_correctCurrent_updatesPassword() {
+        User user = playerUser();
+        user.setPassword("hashed_old");
+        given(userRepository.findByEmail("player@test.pl")).willReturn(Optional.of(user));
+        given(passwordEncoder.matches("oldPass", "hashed_old")).willReturn(true);
+        given(passwordEncoder.encode("newPass1")).willReturn("hashed_new");
+
+        userService.changePassword("player@test.pl", new ChangePasswordRequest("oldPass", "newPass1"));
+
+        verify(userRepository).save(argThat(u -> "hashed_new".equals(u.getPassword())));
+    }
+
+    @Test
+    void changePassword_wrongCurrent_throwsBusinessRuleException() {
+        User user = playerUser();
+        user.setPassword("hashed_old");
+        given(userRepository.findByEmail("player@test.pl")).willReturn(Optional.of(user));
+        given(passwordEncoder.matches("wrongPass", "hashed_old")).willReturn(false);
+
+        assertThatThrownBy(() -> userService.changePassword(
+                "player@test.pl", new ChangePasswordRequest("wrongPass", "newPass1")))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("nieprawidłowe");
     }
 
     private User playerUser() {
