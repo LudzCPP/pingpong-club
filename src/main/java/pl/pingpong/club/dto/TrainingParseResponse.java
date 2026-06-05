@@ -9,6 +9,6 @@ public record TrainingParseResponse(
         String playerName,
         LocalDateTime scheduledAt,
         Integer durationMinutes,
-        BigDecimal hourlyRate,
+        BigDecimal totalPrice,
         String notes
 ) {}

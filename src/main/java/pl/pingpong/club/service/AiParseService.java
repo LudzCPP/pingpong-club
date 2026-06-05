@@ -83,7 +83,7 @@ public class AiParseService {
                   "playerName": "<dopasowane imię i nazwisko lub null>",
                   "scheduledAt": "<data i czas ISO-8601, np. 2026-06-06T16:00:00, lub null>",
                   "durationMinutes": <liczba całkowita lub null>,
-                  "hourlyRate": <liczba lub null>,
+                  "totalPrice": <łączna kwota za cały trening w zł lub null>,
                   "notes": "<notatki lub pusty string>"
                 }
 
@@ -92,7 +92,7 @@ public class AiParseService {
                 - Daty: "jutro", "pojutrze", "w środę", "za 3 dni" — oblicz względem aktualnej daty
                 - Godziny: "o 16" → 16:00, "o piętnastej trzydzieści" → 15:30, "o wpół do czwartej" → 15:30
                 - Czas trwania: "godzina" → 60, "półtorej" → 90, "45 minut" → 45, "pół godziny" → 30
-                - Kwoty: "sto dwadzieścia złotych" → 120, "150 zł" → 150, "stówa" → 100
+                - Kwoty (łączna cena treningu): "sto dwadzieścia złotych" → 120, "150 zł" → 150, "stówa" → 100
                 - Jeśli informacja nie pada w tekście, wstaw null
 
                 Tekst do sparsowania: "%s"
@@ -144,10 +144,10 @@ public class AiParseService {
 
             LocalDateTime scheduledAt = parseDateTime(node.path("scheduledAt").asText(null));
             Integer       duration    = parseInteger(node.path("durationMinutes"));
-            BigDecimal    hourlyRate  = parseDecimal(node.path("hourlyRate"));
+            BigDecimal    totalPrice  = parseDecimal(node.path("totalPrice"));
             String        notes       = node.path("notes").asText("");
 
-            return new TrainingParseResponse(playerId, playerName, scheduledAt, duration, hourlyRate, notes);
+            return new TrainingParseResponse(playerId, playerName, scheduledAt, duration, totalPrice, notes);
 
         } catch (BusinessRuleException e) {
             throw e;
