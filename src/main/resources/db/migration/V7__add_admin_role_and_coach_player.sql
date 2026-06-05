@@ -1,3 +1,7 @@
+-- Rozszerzenie CHECK constraint o ADMIN przed aktualizacją roli
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
+ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('ADMIN', 'COACH', 'PLAYER'));
+
 -- Migracja roli trener@pingpong.pl na ADMIN
 UPDATE users SET role = 'ADMIN' WHERE email = 'trener@pingpong.pl';
 

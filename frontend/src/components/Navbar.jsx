@@ -7,7 +7,9 @@ import ChangePasswordModal from './ChangePasswordModal';
 export default function Navbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const isCoach = user?.role === 'COACH';
+  const isAdmin = user?.role === 'ADMIN';
+  const isCoach = user?.role === 'COACH' || isAdmin;
+  const isPlayer = user?.role === 'PLAYER';
   const [showChangePassword, setShowChangePassword] = useState(false);
 
   function handleLogout() {
@@ -21,6 +23,14 @@ export default function Navbar() {
         ? 'text-accent border-b-2 border-accent'
         : 'text-muted hover:text-white'
     }`;
+
+  const roleBadge = isAdmin
+    ? 'bg-orange-500/20 text-orange-300 border-orange-500/30'
+    : isPlayer
+      ? 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+      : 'bg-accent/20 text-accent border-accent/30';
+
+  const roleLabel = isAdmin ? 'Admin' : isPlayer ? 'Zawodnik' : 'Trener';
 
   return (
     <>
@@ -40,17 +50,15 @@ export default function Navbar() {
             <NavLink to="/trainings" className={linkCls}>Treningi</NavLink>
             <NavLink to="/calendar" className={linkCls}>Kalendarz</NavLink>
             {isCoach && <NavLink to="/players" className={linkCls}>Zawodnicy</NavLink>}
+            {isAdmin && <NavLink to="/coaches" className={linkCls}>Trenerzy</NavLink>}
             {isCoach && <NavLink to="/finances" className={linkCls}>Finanse</NavLink>}
             {isCoach && <NavLink to="/reports" className={linkCls}>Raporty</NavLink>}
+            {isPlayer && <NavLink to="/invitations" className={linkCls}>Zaproszenia</NavLink>}
           </div>
 
           <div className="flex items-center gap-3">
-            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${
-              isCoach
-                ? 'bg-accent/20 text-accent border-accent/30'
-                : 'bg-blue-500/20 text-blue-300 border-blue-500/30'
-            }`}>
-              {isCoach ? 'Trener' : 'Zawodnik'}
+            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${roleBadge}`}>
+              {roleLabel}
             </span>
             <span className="text-sm text-muted hidden sm:block">{user?.email}</span>
             <button
