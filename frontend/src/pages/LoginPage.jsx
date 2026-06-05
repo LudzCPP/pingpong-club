@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { Target } from 'lucide-react';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -33,7 +34,9 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         <div className="bg-surface border border-border rounded-2xl p-8 shadow-2xl">
           <div className="text-center mb-8">
-            <div className="text-5xl mb-3">🏓</div>
+            <div className="w-16 h-16 bg-accent/20 border border-accent/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <Target size={32} className="text-accent" />
+            </div>
             <h1 className="text-2xl font-bold text-white">PingPong Club</h1>
             <p className="text-muted text-sm mt-1">Zaloguj się do systemu trenera</p>
           </div>

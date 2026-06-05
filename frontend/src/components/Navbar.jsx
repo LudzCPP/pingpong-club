@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { Target, LogOut } from 'lucide-react';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -21,13 +22,17 @@ export default function Navbar() {
   return (
     <nav className="bg-surface border-b border-border sticky top-0 z-50">
       <div className="max-w-6xl mx-auto px-6 h-14 flex items-center gap-8">
-        <span className="text-white font-bold text-lg whitespace-nowrap">🏓 PingPong Club</span>
+        <span className="text-white font-bold text-lg whitespace-nowrap flex items-center gap-2">
+          <Target size={18} className="text-accent" />
+          PingPong Club
+        </span>
 
         <div className="flex items-center gap-6 flex-1">
           <NavLink to="/dashboard" className={linkCls}>Dashboard</NavLink>
           <NavLink to="/trainings" className={linkCls}>Treningi</NavLink>
           {isCoach && <NavLink to="/players" className={linkCls}>Zawodnicy</NavLink>}
           <NavLink to="/finances" className={linkCls}>Finanse</NavLink>
+          {isCoach && <NavLink to="/reports" className={linkCls}>Raporty</NavLink>}
         </div>
 
         <div className="flex items-center gap-3">
@@ -41,9 +46,10 @@ export default function Navbar() {
           <span className="text-sm text-muted hidden sm:block">{user?.email}</span>
           <button
             onClick={handleLogout}
-            className="text-sm text-muted hover:text-white border border-border px-3 py-1 rounded-lg hover:border-white/30 transition-colors"
+            className="text-muted hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+            title="Wyloguj"
           >
-            Wyloguj
+            <LogOut size={16} />
           </button>
         </div>
       </div>
