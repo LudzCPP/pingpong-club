@@ -3,6 +3,7 @@ package pl.pingpong.club.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import pl.pingpong.club.dto.CompleteTrainingRequest;
 import pl.pingpong.club.dto.TrainingRequest;
 import pl.pingpong.club.dto.TrainingResponse;
 import pl.pingpong.club.exception.BusinessRuleException;
@@ -98,12 +99,25 @@ public class TrainingService {
     }
 
     @Transactional
-    public TrainingResponse completeTraining(UUID id) {
+    public TrainingResponse completeTraining(UUID id, CompleteTrainingRequest request) {
         Training training = findById(id);
         if (training.getStatus() != TrainingStatus.SCHEDULED) {
             throw new BusinessRuleException("Tylko zaplanowany trening może być oznaczony jako zrealizowany");
         }
         training.setStatus(TrainingStatus.COMPLETED);
+        if (request != null && request.notes() != null && !request.notes().isBlank()) {
+            training.setNotes(request.notes());
+        }
+        return trainingMapper.toResponse(trainingRepository.save(training));
+    }
+
+    @Transactional
+    public TrainingResponse markPaid(UUID id) {
+        Training training = findById(id);
+        if (training.getStatus() != TrainingStatus.COMPLETED) {
+            throw new BusinessRuleException("Tylko zrealizowany trening może być oznaczony jako opłacony");
+        }
+        training.setPaid(!training.isPaid());
         return trainingMapper.toResponse(trainingRepository.save(training));
     }
 

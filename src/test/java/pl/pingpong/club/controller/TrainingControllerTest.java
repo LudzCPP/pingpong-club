@@ -27,6 +27,7 @@ import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -109,7 +110,7 @@ class TrainingControllerTest {
     @WithMockUser(username = "coach@test.pl", roles = "COACH")
     void completeTraining_asCoach_returns200() throws Exception {
         UUID id = UUID.randomUUID();
-        given(trainingService.completeTraining(id)).willReturn(sampleResponse());
+        given(trainingService.completeTraining(eq(id), any())).willReturn(sampleResponse());
 
         mockMvc.perform(patch("/trainings/{id}/complete", id).with(csrf()))
                 .andExpect(status().isOk());
@@ -145,7 +146,7 @@ class TrainingControllerTest {
                 UUID.randomUUID(), "Piotr Trener",
                 LocalDateTime.now().plusDays(1), 60,
                 TrainingStatus.SCHEDULED,
-                BigDecimal.valueOf(100), BigDecimal.valueOf(100), null
+                BigDecimal.valueOf(100), BigDecimal.valueOf(100), null, false
         );
     }
 

@@ -30,8 +30,9 @@ export default function Navbar() {
         <div className="flex items-center gap-6 flex-1">
           <NavLink to="/dashboard" className={linkCls}>Dashboard</NavLink>
           <NavLink to="/trainings" className={linkCls}>Treningi</NavLink>
+          <NavLink to="/calendar" className={linkCls}>Kalendarz</NavLink>
           {isCoach && <NavLink to="/players" className={linkCls}>Zawodnicy</NavLink>}
-          <NavLink to="/finances" className={linkCls}>Finanse</NavLink>
+          {isCoach && <NavLink to="/finances" className={linkCls}>Finanse</NavLink>}
           {isCoach && <NavLink to="/reports" className={linkCls}>Raporty</NavLink>}
         </div>
 
