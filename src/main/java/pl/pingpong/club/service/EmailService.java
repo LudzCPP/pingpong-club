@@ -8,6 +8,7 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import pl.pingpong.club.model.JoinRequest;
 import pl.pingpong.club.model.Training;
 
 import java.time.format.DateTimeFormatter;
@@ -52,6 +53,71 @@ public class EmailService {
         } catch (Exception e) {
             log.error("Błąd wysyłki emaila do {}: {}", training.getPlayer().getEmail(), e.getMessage());
         }
+    }
+
+    @Async
+    public void sendJoinRequestNotification(JoinRequest request) {
+        if (!StringUtils.hasText(fromAddress)) {
+            log.warn("MAIL_USERNAME nie jest skonfigurowany — pomijam wysyłkę emaila.");
+            return;
+        }
+        try {
+            var message = mailSender.createMimeMessage();
+            var helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            String playerEmail = request.getPlayer().getEmail();
+            String playerName  = request.getPlayer().getFirstName();
+            String coachName   = request.getCoach().getFirstName() + " " + request.getCoach().getLastName();
+
+            helper.setFrom(fromAddress);
+            helper.setTo(playerEmail);
+            helper.setSubject("Zaproszenie od trenera " + coachName);
+            helper.setText(buildJoinRequestHtml(playerName, coachName), true);
+
+            mailSender.send(message);
+            log.info("Email z zaproszeniem wysłany do: {}", playerEmail);
+        } catch (Exception e) {
+            log.error("Błąd wysyłki emaila z zaproszeniem do {}: {}", request.getPlayer().getEmail(), e.getMessage());
+        }
+    }
+
+    private String buildJoinRequestHtml(String player, String coach) {
+        return """
+                <!DOCTYPE html>
+                <html lang="pl">
+                <head><meta charset="UTF-8"></head>
+                <body style="margin:0;padding:0;background:#0f172a;font-family:'Segoe UI',sans-serif;">
+                  <table width="100%%" cellpadding="0" cellspacing="0" style="background:#0f172a;padding:40px 0;">
+                    <tr><td align="center">
+                      <table width="560" cellpadding="0" cellspacing="0"
+                             style="background:#1e293b;border-radius:12px;border:1px solid #334155;overflow:hidden;">
+                        <tr>
+                          <td style="background:#22c55e;padding:24px 32px;">
+                            <p style="margin:0;color:#fff;font-size:11px;font-weight:600;
+                                      letter-spacing:2px;text-transform:uppercase;">TTManager</p>
+                            <h1 style="margin:4px 0 0;color:#fff;font-size:22px;font-weight:700;">
+                              Masz nowe zaproszenie!
+                            </h1>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding:32px;">
+                            <p style="margin:0 0 24px;color:#94a3b8;font-size:15px;">
+                              Cześć <strong style="color:#f8fafc;">%s</strong>,<br>
+                              trener <strong style="color:#f8fafc;">%s</strong> zaprasza Cię do swojego zespołu.
+                            </p>
+                            <p style="margin:0;color:#64748b;font-size:13px;">
+                              Zaloguj się do aplikacji, przejdź do zakładki <strong style="color:#94a3b8;">Zaproszenia</strong>
+                              i zaakceptuj lub odrzuć zaproszenie.
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td></tr>
+                  </table>
+                </body>
+                </html>
+                """.formatted(player, coach);
     }
 
     private String buildHtml(String player, String coach, String date, String duration, String price) {

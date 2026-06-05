@@ -31,6 +31,7 @@ class JoinRequestServiceTest {
 
     @Mock private JoinRequestRepository joinRequestRepository;
     @Mock private UserRepository userRepository;
+    @Mock private EmailService emailService;
 
     @InjectMocks private JoinRequestService service;
 
