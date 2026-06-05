@@ -39,9 +39,7 @@ public class EmailService {
                     .format(DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy 'o' HH:mm",
                             new java.util.Locale("pl")));
             String duration = training.getDurationMinutes() + " min";
-            String price = training.getHourlyRate()
-                    .multiply(java.math.BigDecimal.valueOf(training.getDurationMinutes()))
-                    .divide(java.math.BigDecimal.valueOf(60), 2, java.math.RoundingMode.HALF_UP)
+            String price = training.getTotalPrice()
                     .stripTrailingZeros().toPlainString() + " zł";
 
             helper.setFrom(fromAddress);
@@ -71,7 +69,7 @@ public class EmailService {
                         <tr>
                           <td style="background:#22c55e;padding:24px 32px;">
                             <p style="margin:0;color:#fff;font-size:11px;font-weight:600;
-                                      letter-spacing:2px;text-transform:uppercase;">PingPong Club</p>
+                                      letter-spacing:2px;text-transform:uppercase;">TTManager</p>
                             <h1 style="margin:4px 0 0;color:#fff;font-size:22px;font-weight:700;">
                               Masz nowy trening!
                             </h1>

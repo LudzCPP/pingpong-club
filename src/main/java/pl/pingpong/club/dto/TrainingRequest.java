@@ -13,7 +13,7 @@ public record TrainingRequest(
 
         @Positive @Max(480) int durationMinutes,
 
-        @NotNull @DecimalMin("0.00") @Digits(integer = 6, fraction = 2) BigDecimal hourlyRate,
+        @NotNull @DecimalMin("0.00") @Digits(integer = 6, fraction = 2) BigDecimal totalPrice,
 
         @Size(max = 500) String notes
 ) {}

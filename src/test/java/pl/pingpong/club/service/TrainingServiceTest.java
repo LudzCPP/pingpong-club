@@ -256,7 +256,7 @@ class TrainingServiceTest {
                 .name("trening Anna")
                 .scheduledAt(LocalDateTime.now().plusDays(1))
                 .durationMinutes(60)
-                .hourlyRate(BigDecimal.valueOf(100))
+                .totalPrice(BigDecimal.valueOf(100))
                 .player(playerUser("Anna"))
                 .coach(coachUser())
                 .build();
@@ -274,7 +274,7 @@ class TrainingServiceTest {
                 .name("trening " + player.getFirstName())
                 .scheduledAt(LocalDateTime.now().plusDays(1))
                 .durationMinutes(60)
-                .hourlyRate(BigDecimal.valueOf(100))
+                .totalPrice(BigDecimal.valueOf(100))
                 .player(player)
                 .coach(coachUser())
                 .build();

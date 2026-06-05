@@ -150,7 +150,7 @@ class TrainingControllerTest {
                 UUID.randomUUID(), "Piotr Trener",
                 LocalDateTime.now().plusDays(1), 60,
                 TrainingStatus.SCHEDULED,
-                BigDecimal.valueOf(100), BigDecimal.valueOf(100), null, false
+                BigDecimal.valueOf(100), null, false
         );
     }
 

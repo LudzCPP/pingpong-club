@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @OpenAPIDefinition(
         info = @Info(
-                title       = "Pingpong Club API",
+                title       = "TTManager API",
                 version     = "1.0",
                 description = "Backend do zarządzania treningami tenisa stołowego i klubem sportowym"
         ),

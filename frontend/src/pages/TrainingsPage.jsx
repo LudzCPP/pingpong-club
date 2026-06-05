@@ -140,7 +140,7 @@ export default function TrainingsPage() {
         playerId: form.playerId,
         scheduledAt: form.scheduledAt,
         durationMinutes: duration,
-        hourlyRate: duration > 0 ? (total * 60) / duration : total,
+        totalPrice: total,
         notes: form.notes,
       });
       setShowForm(false);
@@ -421,9 +421,7 @@ export default function TrainingsPage() {
                   </td>
                   <td className="px-4 py-3 text-muted hidden sm:table-cell">{t.durationMinutes} min</td>
                   <td className="px-4 py-3 text-white font-semibold">
-                    {t.totalPrice != null
-                      ? `${Number(t.totalPrice).toFixed(0)} zł`
-                      : `${((t.hourlyRate * t.durationMinutes) / 60).toFixed(0)} zł`}
+                    {t.totalPrice != null ? `${Number(t.totalPrice).toFixed(0)} zł` : '—'}
                   </td>
                   <td className="px-4 py-3"><StatusBadge status={t.status} /></td>
                   {isCoach && (

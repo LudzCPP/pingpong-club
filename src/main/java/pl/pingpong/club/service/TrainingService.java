@@ -47,7 +47,7 @@ public class TrainingService {
                 .coach(coach)
                 .scheduledAt(request.scheduledAt())
                 .durationMinutes(request.durationMinutes())
-                .hourlyRate(request.hourlyRate())
+                .totalPrice(request.totalPrice())
                 .notes(request.notes())
                 .build();
 
@@ -87,7 +87,7 @@ public class TrainingService {
         training.setPlayer(player);
         training.setScheduledAt(request.scheduledAt());
         training.setDurationMinutes(request.durationMinutes());
-        training.setHourlyRate(request.hourlyRate());
+        training.setTotalPrice(request.totalPrice());
         training.setNotes(request.notes());
 
         return trainingMapper.toResponse(trainingRepository.save(training));

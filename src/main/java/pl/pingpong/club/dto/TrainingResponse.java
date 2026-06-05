@@ -16,7 +16,6 @@ public record TrainingResponse(
         LocalDateTime scheduledAt,
         int durationMinutes,
         TrainingStatus status,
-        BigDecimal hourlyRate,
         BigDecimal totalPrice,
         String notes,
         boolean paid
