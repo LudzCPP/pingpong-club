@@ -49,7 +49,7 @@ public class JoinRequestService {
                 .build();
 
         JoinRequest saved = joinRequestRepository.save(request);
-        emailService.sendJoinRequestNotification(saved);
+        // emailService.sendJoinRequestNotification(saved); // odkomentuj gdy limit maili nie jest problemem
         return toResponse(saved);
     }
 
