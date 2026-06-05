@@ -150,12 +150,11 @@ export default function ReportsPage() {
   function handleExportTrainings() {
     exportCsv(
       `treningi_${from}_${to}.csv`,
-      ['Data', 'Zawodnik', 'Czas (min)', 'Stawka (zł/h)', 'Kwota (zł)', 'Status'],
+      ['Data', 'Zawodnik', 'Czas (min)', 'Kwota (zł)', 'Status'],
       filteredTrainings.map(t => [
         t.scheduledAt?.slice(0, 10),
         t.playerFullName,
         t.durationMinutes,
-        t.hourlyRate,
         Number(t.totalPrice ?? 0).toFixed(2),
         t.status,
       ])

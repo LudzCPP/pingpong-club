@@ -24,7 +24,7 @@ export default function Navbar() {
       <div className="max-w-6xl mx-auto px-6 h-14 flex items-center gap-8">
         <span className="text-white font-bold text-lg whitespace-nowrap flex items-center gap-2">
           <Target size={18} className="text-accent" />
-          PingPong Club
+          TTManager
         </span>
 
         <div className="flex items-center gap-6 flex-1">

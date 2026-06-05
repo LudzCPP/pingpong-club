@@ -37,7 +37,7 @@ export default function LoginPage() {
             <div className="w-16 h-16 bg-accent/20 border border-accent/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <Target size={32} className="text-accent" />
             </div>
-            <h1 className="text-2xl font-bold text-white">PingPong Club</h1>
+            <h1 className="text-2xl font-bold text-white">TTManager</h1>
             <p className="text-muted text-sm mt-1">Zaloguj się do systemu trenera</p>
           </div>
 

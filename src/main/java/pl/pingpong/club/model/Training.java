@@ -48,9 +48,8 @@ public class Training {
     @Builder.Default
     private TrainingStatus status = TrainingStatus.SCHEDULED;
 
-    /** Stawka godzinowa obowiązująca w momencie rezerwacji. */
     @Column(nullable = false, precision = 8, scale = 2)
-    private BigDecimal hourlyRate;
+    private BigDecimal totalPrice;
 
     @Column(length = 500)
     private String notes;
