@@ -35,6 +35,15 @@ springdoc:
   api-docs:
     path: /v3/api-docs
 
+spring.mail:
+  host: ${MAIL_HOST:smtp.gmail.com}
+  port: ${MAIL_PORT:587}
+  username: ${MAIL_USERNAME:}
+  password: ${MAIL_PASSWORD:}
+  properties:
+    mail.smtp.auth: true
+    mail.smtp.starttls.enable: true
+
 ai:
   # Provider zgodny z OpenAI Chat API. Zmień base-url + model żeby użyć innego.
   # Groq (darmowy, ~14 000 req/dzień): https://console.groq.com → utwórz klucz API

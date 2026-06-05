@@ -37,8 +37,9 @@ import static org.mockito.Mockito.verify;
 class TrainingServiceTest {
 
     @Mock private TrainingRepository trainingRepository;
-    @Mock private UserRepository userRepository;
-    @Mock private TrainingMapper trainingMapper;
+    @Mock private UserRepository     userRepository;
+    @Mock private TrainingMapper     trainingMapper;
+    @Mock private EmailService       emailService;
 
     @InjectMocks private TrainingService trainingService;
 

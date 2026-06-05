@@ -26,8 +26,9 @@ import java.util.UUID;
 public class TrainingService {
 
     private final TrainingRepository trainingRepository;
-    private final UserRepository userRepository;
-    private final TrainingMapper trainingMapper;
+    private final UserRepository     userRepository;
+    private final TrainingMapper     trainingMapper;
+    private final EmailService       emailService;
 
     // ------------------------------------------------------------------ ZAPIS
 
@@ -50,7 +51,9 @@ public class TrainingService {
                 .notes(request.notes())
                 .build();
 
-        return trainingMapper.toResponse(trainingRepository.save(training));
+        Training saved = trainingRepository.save(training);
+        emailService.sendTrainingConfirmation(saved);
+        return trainingMapper.toResponse(saved);
     }
 
     @Transactional
