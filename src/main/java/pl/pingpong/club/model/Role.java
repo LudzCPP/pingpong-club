@@ -1,6 +1,7 @@
 package pl.pingpong.club.model;
 
 public enum Role {
-    COACH,   // Trener – pełen dostęp
+    ADMIN,   // Administrator – zarządza trenerami, widzi wszystko
+    COACH,   // Trener – zarządza swoimi zawodnikami i treningami
     PLAYER   // Zawodnik – odczyt własnego grafiku
 }

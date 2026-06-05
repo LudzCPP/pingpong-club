@@ -2,6 +2,7 @@ package pl.pingpong.club.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import pl.pingpong.club.model.Role;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -29,6 +30,11 @@ public class InviteToken {
 
     @Column(nullable = false)
     private LocalDateTime expiresAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private Role targetRole = Role.PLAYER;
 
     @Column(nullable = false)
     @Builder.Default

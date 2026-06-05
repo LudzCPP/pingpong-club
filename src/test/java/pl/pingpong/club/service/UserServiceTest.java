@@ -48,15 +48,31 @@ class UserServiceTest {
     }
 
     @Test
-    void getAllPlayers_queriesOnlyPlayersRole() {
+    void getAllPlayers_asAdmin_queriesAllPlayers() {
+        User admin = adminUser();
         User p = playerUser();
+        given(userRepository.findByEmail("admin@test.pl")).willReturn(Optional.of(admin));
         given(userRepository.findAllByRole(Role.PLAYER)).willReturn(List.of(p));
         given(userMapper.toResponse(p)).willReturn(mock(UserResponse.class));
 
-        List<UserResponse> result = userService.getAllPlayers();
+        List<UserResponse> result = userService.getAllPlayers("admin@test.pl");
 
         assertThat(result).hasSize(1);
         verify(userRepository).findAllByRole(Role.PLAYER);
+    }
+
+    @Test
+    void getAllPlayers_asCoach_queriesOwnPlayers() {
+        User coach = coachUser();
+        User p = playerUser();
+        given(userRepository.findByEmail("coach@test.pl")).willReturn(Optional.of(coach));
+        given(userRepository.findPlayersByCoachId(coach.getId())).willReturn(List.of(p));
+        given(userMapper.toResponse(p)).willReturn(mock(UserResponse.class));
+
+        List<UserResponse> result = userService.getAllPlayers("coach@test.pl");
+
+        assertThat(result).hasSize(1);
+        verify(userRepository).findPlayersByCoachId(coach.getId());
     }
 
     @Test
@@ -151,5 +167,10 @@ class UserServiceTest {
     private User coachUser() {
         return User.builder().id(UUID.randomUUID()).firstName("Piotr").lastName("Trener")
                 .email("coach@test.pl").password("x").role(Role.COACH).build();
+    }
+
+    private User adminUser() {
+        return User.builder().id(UUID.randomUUID()).firstName("Admin").lastName("Root")
+                .email("admin@test.pl").password("x").role(Role.ADMIN).build();
     }
 }

@@ -30,10 +30,12 @@ public class UserService {
         return userMapper.toResponse(findByEmail(email));
     }
 
-    public List<UserResponse> getAllPlayers() {
-        return userRepository.findAllByRole(Role.PLAYER).stream()
-                .map(userMapper::toResponse)
-                .toList();
+    public List<UserResponse> getAllPlayers(String callerEmail) {
+        User caller = findByEmail(callerEmail);
+        List<User> players = caller.getRole() == Role.ADMIN
+                ? userRepository.findAllByRole(Role.PLAYER)
+                : userRepository.findPlayersByCoachId(caller.getId());
+        return players.stream().map(userMapper::toResponse).toList();
     }
 
     public List<UserResponse> getAllCoaches() {

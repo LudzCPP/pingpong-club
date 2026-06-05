@@ -70,7 +70,7 @@ class UserControllerTest {
     @Test
     @WithMockUser(username = "coach@test.pl", roles = "COACH")
     void getPlayers_asCoach_returns200() throws Exception {
-        given(userService.getAllPlayers()).willReturn(List.of(playerResponse()));
+        given(userService.getAllPlayers(anyString())).willReturn(List.of(playerResponse()));
 
         mockMvc.perform(get("/users/players"))
                 .andExpect(status().isOk())
@@ -85,8 +85,8 @@ class UserControllerTest {
     }
 
     @Test
-    @WithMockUser(username = "coach@test.pl", roles = "COACH")
-    void createCoach_asCoach_returns201() throws Exception {
+    @WithMockUser(username = "admin@test.pl", roles = "ADMIN")
+    void createCoach_asAdmin_returns201() throws Exception {
         given(userService.createCoach(any())).willReturn(coachResponse());
         CreateCoachRequest request = new CreateCoachRequest("Jan", "Trener", "jan@test.pl", "Password1");
 
@@ -96,6 +96,18 @@ class UserControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.role").value("COACH"));
+    }
+
+    @Test
+    @WithMockUser(username = "coach@test.pl", roles = "COACH")
+    void createCoach_asCoach_returns403() throws Exception {
+        CreateCoachRequest request = new CreateCoachRequest("Jan", "T", "jan@test.pl", "Password1");
+
+        mockMvc.perform(post("/users/coaches")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -111,13 +123,20 @@ class UserControllerTest {
     }
 
     @Test
-    @WithMockUser(username = "coach@test.pl", roles = "COACH")
-    void deactivateUser_asCoach_returns200() throws Exception {
+    @WithMockUser(username = "admin@test.pl", roles = "ADMIN")
+    void deactivateUser_asAdmin_returns200() throws Exception {
         UUID id = UUID.randomUUID();
         given(userService.deactivateUser(id)).willReturn(playerResponse());
 
         mockMvc.perform(delete("/users/{id}", id).with(csrf()))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(username = "coach@test.pl", roles = "COACH")
+    void deactivateUser_asCoach_returns403() throws Exception {
+        mockMvc.perform(delete("/users/{id}", UUID.randomUUID()).with(csrf()))
+                .andExpect(status().isForbidden());
     }
 
     @Test

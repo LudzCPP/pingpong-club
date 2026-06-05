@@ -87,13 +87,13 @@ class IntegrationTest {
     // ── Auth ──────────────────────────────────────────────────────────────────
 
     @Test @Order(1)
-    void login_validCredentials_returns200WithCoachRole() {
+    void login_validCredentials_returns200WithAdminRole() {
         var response = rest.postForEntity(url("/auth/login"),
                 new LoginRequest("trener@pingpong.pl", "Coach123!"), AuthResponse.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody().token()).isNotBlank();
-        assertThat(response.getBody().role().name()).isEqualTo("COACH");
+        assertThat(response.getBody().role().name()).isEqualTo("ADMIN");
     }
 
     @Test @Order(2)

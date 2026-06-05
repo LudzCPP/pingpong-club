@@ -47,9 +47,10 @@ public class AuthService {
                 jwtService.extractExpiration(token));
     }
 
+    /** Generuje link zaproszenia dla zawodnika (COACH lub ADMIN wywołuje). */
     @Transactional
-    public InviteResponse generateInvite(String coachEmail) {
-        User coach = userRepository.findByEmail(coachEmail)
+    public InviteResponse generateInvite(String callerEmail) {
+        User caller = userRepository.findByEmail(callerEmail)
                 .orElseThrow(() -> new BusinessRuleException("Nie znaleziono użytkownika"));
 
         String rawToken = UUID.randomUUID().toString().replace("-", "");
@@ -57,8 +58,31 @@ public class AuthService {
 
         InviteToken invite = InviteToken.builder()
                 .token(rawToken)
-                .createdBy(coach)
+                .createdBy(caller)
                 .expiresAt(expiresAt)
+                .targetRole(Role.PLAYER)
+                .build();
+
+        inviteTokenRepository.save(invite);
+
+        String inviteUrl = frontendUrl + "/register?token=" + rawToken;
+        return new InviteResponse(inviteUrl, expiresAt);
+    }
+
+    /** Generuje link zaproszenia dla trenera (tylko ADMIN wywołuje). */
+    @Transactional
+    public InviteResponse generateCoachInvite(String adminEmail) {
+        User admin = userRepository.findByEmail(adminEmail)
+                .orElseThrow(() -> new BusinessRuleException("Nie znaleziono użytkownika"));
+
+        String rawToken = UUID.randomUUID().toString().replace("-", "");
+        LocalDateTime expiresAt = LocalDateTime.now().plusHours(48);
+
+        InviteToken invite = InviteToken.builder()
+                .token(rawToken)
+                .createdBy(admin)
+                .expiresAt(expiresAt)
+                .targetRole(Role.COACH)
                 .build();
 
         inviteTokenRepository.save(invite);
@@ -83,16 +107,24 @@ public class AuthService {
         }
 
         invite.setUsed(true);
+        Role targetRole = invite.getTargetRole();
 
         User user = User.builder()
                 .firstName(request.firstName())
                 .lastName(request.lastName())
                 .email(request.email())
                 .password(passwordEncoder.encode(request.password()))
-                .role(Role.PLAYER)
+                .role(targetRole)
                 .build();
 
         userRepository.save(user);
+
+        if (targetRole == Role.PLAYER) {
+            User creator = invite.getCreatedBy();
+            if (creator.getRole() == Role.COACH) {
+                userRepository.addCoachPlayerLink(creator.getId(), user.getId());
+            }
+        }
 
         String jwtToken = jwtService.generateToken(user);
         return new AuthResponse(jwtToken, user.getEmail(), user.getRole(),

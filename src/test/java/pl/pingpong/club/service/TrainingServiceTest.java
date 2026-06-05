@@ -49,10 +49,11 @@ class TrainingServiceTest {
     void createTraining_nameAlwaysSetFromPlayerFirstName() {
         User coach = coachUser();
         User player = playerUser("Anna");
-        Training saved = trainingWithPlayer(player);
+        Training saved = trainingForCoach(coach, player);
 
         given(userRepository.findByEmail("coach@test.pl")).willReturn(Optional.of(coach));
         given(userRepository.findById(player.getId())).willReturn(Optional.of(player));
+        given(userRepository.existsCoachPlayerLink(coach.getId(), player.getId())).willReturn(true);
         given(trainingRepository.existsConflictForCoach(any(), any(), any())).willReturn(false);
         given(trainingRepository.save(any())).willReturn(saved);
         given(trainingMapper.toResponse(saved)).willReturn(mock(TrainingResponse.class));
@@ -69,6 +70,7 @@ class TrainingServiceTest {
 
         given(userRepository.findByEmail("coach@test.pl")).willReturn(Optional.of(coach));
         given(userRepository.findById(player.getId())).willReturn(Optional.of(player));
+        given(userRepository.existsCoachPlayerLink(coach.getId(), player.getId())).willReturn(true);
         given(trainingRepository.existsConflictForCoach(eq(coach.getId()), any(), any())).willReturn(true);
 
         assertThatThrownBy(() ->
@@ -156,17 +158,17 @@ class TrainingServiceTest {
     // ---- getTrainings ----
 
     @Test
-    void getTrainings_coachUser_returnsAllTrainings() {
+    void getTrainings_coachUser_returnsOwnTrainings() {
         User coach = coachUser();
         Training t = scheduledTraining();
         given(userRepository.findByEmail("coach@test.pl")).willReturn(Optional.of(coach));
-        given(trainingRepository.findAll()).willReturn(List.of(t));
+        given(trainingRepository.findAllByCoachId(coach.getId())).willReturn(List.of(t));
         given(trainingMapper.toResponse(t)).willReturn(mock(TrainingResponse.class));
 
         List<TrainingResponse> result = trainingService.getTrainings("coach@test.pl");
 
         assertThat(result).hasSize(1);
-        verify(trainingRepository).findAll();
+        verify(trainingRepository).findAllByCoachId(coach.getId());
         verify(trainingRepository, never()).findAllByPlayerId(any());
     }
 
@@ -214,11 +216,11 @@ class TrainingServiceTest {
     }
 
     @Test
-    void getTrainingById_coachUser_seesAnyTraining() {
+    void getTrainingById_coachUser_seesOwnTraining() {
         User coach = coachUser();
         User player = playerUser("Anna");
         UUID id = UUID.randomUUID();
-        Training training = trainingWithPlayer(player);
+        Training training = trainingForCoach(coach, player);
         TrainingResponse response = mock(TrainingResponse.class);
 
         given(trainingRepository.findById(id)).willReturn(Optional.of(training));
@@ -226,6 +228,22 @@ class TrainingServiceTest {
         given(trainingMapper.toResponse(training)).willReturn(response);
 
         assertThat(trainingService.getTrainingById(id, "coach@test.pl")).isEqualTo(response);
+    }
+
+    @Test
+    void getTrainingById_coachUser_cannotSeeOtherCoachsTraining() {
+        User coach = coachUser();
+        User otherCoach = User.builder().id(UUID.randomUUID()).firstName("Other").lastName("Coach")
+                .email("other@test.pl").password("x").role(Role.COACH).build();
+        User player = playerUser("Anna");
+        UUID id = UUID.randomUUID();
+        Training training = trainingForCoach(otherCoach, player);
+
+        given(trainingRepository.findById(id)).willReturn(Optional.of(training));
+        given(userRepository.findByEmail("coach@test.pl")).willReturn(Optional.of(coach));
+
+        assertThatThrownBy(() -> trainingService.getTrainingById(id, "coach@test.pl"))
+                .isInstanceOf(ResourceNotFoundException.class);
     }
 
     // ---- helpers ----
@@ -269,6 +287,10 @@ class TrainingServiceTest {
     }
 
     private Training trainingWithPlayer(User player) {
+        return trainingForCoach(coachUser(), player);
+    }
+
+    private Training trainingForCoach(User coach, User player) {
         return Training.builder()
                 .id(UUID.randomUUID())
                 .name("trening " + player.getFirstName())
@@ -276,7 +298,7 @@ class TrainingServiceTest {
                 .durationMinutes(60)
                 .totalPrice(BigDecimal.valueOf(100))
                 .player(player)
-                .coach(coachUser())
+                .coach(coach)
                 .build();
     }
 }
