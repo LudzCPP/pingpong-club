@@ -72,6 +72,15 @@ public class UserService {
     }
 
     @Transactional
+    public void removePlayerFromCoach(String coachEmail, UUID playerId) {
+        User coach = findByEmail(coachEmail);
+        if (!userRepository.existsCoachPlayerLink(coach.getId(), playerId)) {
+            throw new ResourceNotFoundException("Zawodnik nie należy do Twojej listy");
+        }
+        userRepository.removeCoachPlayerLink(coach.getId(), playerId);
+    }
+
+    @Transactional
     public UserResponse deactivateUser(UUID id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Nie znaleziono użytkownika o ID: " + id));

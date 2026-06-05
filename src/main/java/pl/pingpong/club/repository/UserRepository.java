@@ -31,4 +31,9 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     @Modifying
     @Query(value = "INSERT INTO coach_player (coach_id, player_id) VALUES (:coachId, :playerId)", nativeQuery = true)
     void addCoachPlayerLink(@Param("coachId") UUID coachId, @Param("playerId") UUID playerId);
+
+    /** Usuwa relację trener–zawodnik. */
+    @Modifying
+    @Query(value = "DELETE FROM coach_player WHERE coach_id = :coachId AND player_id = :playerId", nativeQuery = true)
+    void removeCoachPlayerLink(@Param("coachId") UUID coachId, @Param("playerId") UUID playerId);
 }
