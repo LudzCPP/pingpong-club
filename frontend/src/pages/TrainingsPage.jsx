@@ -1,15 +1,22 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import client from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import Avatar from '../components/Avatar';
 import StatusBadge from '../components/StatusBadge';
-import { Check, X, Plus } from 'lucide-react';
+import { Check, X, Plus, Mic, MicOff, Sparkles, Loader } from 'lucide-react';
 
 const FILTERS = ['Wszystkie', 'SCHEDULED', 'COMPLETED', 'CANCELLED'];
 const FILTER_LABEL = { Wszystkie: 'Wszystkie', SCHEDULED: 'Zaplanowane', COMPLETED: 'Zrealizowane', CANCELLED: 'Odwołane' };
 
 const inputCls = 'bg-base border border-border rounded-lg px-3 py-2 text-white text-sm placeholder-muted focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors w-full';
 const labelCls = 'text-xs font-medium text-muted uppercase tracking-wide';
+
+const EMPTY_FORM = { playerId: '', scheduledAt: '', durationMinutes: 60, hourlyRate: '', notes: '' };
+
+function formatForDatetimeInput(isoString) {
+  if (!isoString) return '';
+  return isoString.slice(0, 16);
+}
 
 export default function TrainingsPage() {
   const { user } = useAuth();
@@ -19,10 +26,21 @@ export default function TrainingsPage() {
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('Wszystkie');
+
+  // Manual form
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ playerId: '', scheduledAt: '', durationMinutes: 60, hourlyRate: '', notes: '' });
+  const [form, setForm] = useState(EMPTY_FORM);
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [aiFilledLabel, setAiFilledLabel] = useState('');
+
+  // AI panel
+  const [showAiPanel, setShowAiPanel] = useState(false);
+  const [aiText, setAiText] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState('');
+  const [isRecording, setIsRecording] = useState(false);
+  const recognitionRef = useRef(null);
 
   async function fetchTrainings() {
     const { data } = await client.get('/trainings');
@@ -42,6 +60,72 @@ export default function TrainingsPage() {
     load();
   }, [isCoach]);
 
+  // ── Voice recording ───────────────────────────────────────────────────────
+
+  function toggleRecording() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) {
+      setAiError('Przeglądarka nie obsługuje rozpoznawania mowy. Użyj Chrome na telefonie lub wpisz tekst ręcznie.');
+      return;
+    }
+
+    if (isRecording) {
+      recognitionRef.current?.stop();
+      setIsRecording(false);
+      return;
+    }
+
+    const rec = new SR();
+    rec.lang = 'pl-PL';
+    rec.interimResults = false;
+    rec.maxAlternatives = 1;
+
+    rec.onresult = (e) => {
+      const transcript = e.results[0][0].transcript;
+      setAiText(prev => prev ? prev + ' ' + transcript : transcript);
+    };
+    rec.onerror = () => setIsRecording(false);
+    rec.onend = () => setIsRecording(false);
+
+    recognitionRef.current = rec;
+    rec.start();
+    setIsRecording(true);
+    setAiError('');
+  }
+
+  // ── AI parse ──────────────────────────────────────────────────────────────
+
+  async function handleAiParse() {
+    if (!aiText.trim()) return;
+    setAiLoading(true);
+    setAiError('');
+    try {
+      const { data } = await client.post('/trainings/parse', { text: aiText.trim() });
+
+      setForm({
+        playerId:        data.playerId ?? '',
+        scheduledAt:     formatForDatetimeInput(data.scheduledAt),
+        durationMinutes: data.durationMinutes ?? 60,
+        hourlyRate:      data.hourlyRate != null ? String(data.hourlyRate) : '',
+        notes:           data.notes ?? '',
+      });
+
+      setAiFilledLabel(data.playerName
+        ? `Dane z AI dla: ${data.playerName}`
+        : 'Dane z AI — sprawdź i uzupełnij brakujące pola');
+
+      setShowAiPanel(false);
+      setShowForm(true);
+      setAiText('');
+    } catch (err) {
+      setAiError(err.response?.data?.detail || 'Błąd analizy tekstu.');
+    } finally {
+      setAiLoading(false);
+    }
+  }
+
+  // ── Manual form submit ────────────────────────────────────────────────────
+
   async function handleCreate(e) {
     e.preventDefault();
     setFormError('');
@@ -53,7 +137,9 @@ export default function TrainingsPage() {
         hourlyRate: Number(form.hourlyRate),
       });
       setShowForm(false);
-      setForm({ playerId: '', scheduledAt: '', durationMinutes: 60, hourlyRate: '', notes: '' });
+      setShowAiPanel(false);
+      setAiFilledLabel('');
+      setForm(EMPTY_FORM);
       await fetchTrainings();
     } catch (err) {
       setFormError(err.response?.data?.detail || 'Błąd zapisu treningu.');
@@ -63,6 +149,20 @@ export default function TrainingsPage() {
   async function handleStatus(id, action) {
     await client.patch(`/trainings/${id}/${action}`);
     await fetchTrainings();
+  }
+
+  function openManualForm() {
+    setShowAiPanel(false);
+    setAiFilledLabel('');
+    setForm(EMPTY_FORM);
+    setShowForm(s => !s);
+  }
+
+  function openAiPanel() {
+    setShowForm(false);
+    setAiFilledLabel('');
+    setShowAiPanel(s => !s);
+    setAiError('');
   }
 
   const visible = filter === 'Wszystkie' ? trainings : trainings.filter(t => t.status === filter);
@@ -75,7 +175,7 @@ export default function TrainingsPage() {
     <div className="max-w-6xl mx-auto px-6 py-8 space-y-6">
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-white">Treningi</h1>
           <p className="text-sm text-muted mt-1">
@@ -85,18 +185,108 @@ export default function TrainingsPage() {
           </p>
         </div>
         {isCoach && (
-          <button
-            onClick={() => setShowForm(!showForm)}
-            className="flex items-center gap-2 bg-accent hover:bg-green-600 text-white font-semibold px-4 py-2 rounded-lg transition-colors text-sm"
-          >
-            {showForm ? <><X size={14} /> Anuluj</> : <><Plus size={14} /> Nowy trening</>}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={openAiPanel}
+              title="Dodaj trening głosowo lub przez AI"
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                showAiPanel
+                  ? 'bg-blue-500/20 border-blue-500/50 text-blue-300'
+                  : 'bg-surface border-border text-muted hover:text-white hover:border-slate-500'
+              }`}
+            >
+              <Sparkles size={14} />
+              <span className="hidden sm:inline">AI / Głos</span>
+            </button>
+            <button
+              onClick={openManualForm}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                showForm && !showAiPanel
+                  ? 'bg-surface border border-border text-muted'
+                  : 'bg-accent hover:bg-green-600 text-white'
+              }`}
+            >
+              {showForm ? <><X size={14} /> Anuluj</> : <><Plus size={14} /> Nowy trening</>}
+            </button>
+          </div>
         )}
       </div>
 
-      {/* Form */}
+      {/* AI panel */}
+      {showAiPanel && (
+        <div className="bg-surface border border-blue-500/30 rounded-xl p-6 border-l-4 border-l-blue-500">
+          <div className="flex items-center gap-2 mb-1">
+            <Sparkles size={16} className="text-blue-400" />
+            <h2 className="text-white font-semibold">Dodaj trening głosowo lub tekstem</h2>
+          </div>
+          <p className="text-xs text-muted mb-4">
+            Np. <span className="text-slate-300 italic">"Łukasz jutro o 16, godzina, 120 złotych"</span>
+            {' '}lub{' '}
+            <span className="text-slate-300 italic">"Kowalski w środę o piętnastej trzydzieści, 45 minut, stówa"</span>
+          </p>
+
+          <div className="flex gap-3 items-start">
+            <textarea
+              value={aiText}
+              onChange={e => setAiText(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAiParse(); } }}
+              placeholder="Wpisz lub podyktuj opis treningu..."
+              rows={2}
+              className="flex-1 bg-base border border-border rounded-lg px-3 py-2 text-white text-sm placeholder-muted focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors resize-none"
+            />
+            <button
+              onClick={toggleRecording}
+              title={isRecording ? 'Zatrzymaj nagrywanie' : 'Nagraj głosowo'}
+              className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center transition-colors border ${
+                isRecording
+                  ? 'bg-red-500/20 border-red-500/50 text-red-400 animate-pulse'
+                  : 'bg-base border-border text-muted hover:text-white hover:border-slate-500'
+              }`}
+            >
+              {isRecording ? <MicOff size={16} /> : <Mic size={16} />}
+            </button>
+          </div>
+
+          {isRecording && (
+            <p className="text-xs text-red-400 mt-2 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 bg-red-400 rounded-full inline-block animate-pulse" />
+              Nagrywanie... mów po polsku
+            </p>
+          )}
+
+          {aiError && (
+            <div className="mt-3 bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-lg">
+              {aiError}
+            </div>
+          )}
+
+          <div className="flex gap-3 mt-4">
+            <button
+              onClick={handleAiParse}
+              disabled={!aiText.trim() || aiLoading}
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold px-5 py-2 rounded-lg transition-colors text-sm"
+            >
+              {aiLoading ? <><Loader size={14} className="animate-spin" /> Analizuję...</> : <><Sparkles size={14} /> Analizuj</>}
+            </button>
+            <button
+              onClick={() => { setShowAiPanel(false); setAiText(''); setAiError(''); }}
+              className="text-sm text-muted hover:text-white px-3 py-2 rounded-lg transition-colors"
+            >
+              Anuluj
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Manual form */}
       {showForm && (
         <div className="bg-surface border border-border rounded-xl p-6 border-l-4 border-l-accent">
+          {aiFilledLabel && (
+            <div className="flex items-center gap-2 mb-4 bg-blue-500/10 border border-blue-500/30 text-blue-300 text-xs px-3 py-2 rounded-lg">
+              <Sparkles size={12} />
+              {aiFilledLabel}
+            </div>
+          )}
           <h2 className="text-white font-semibold mb-5">Zaplanuj trening</h2>
           <form onSubmit={handleCreate} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
@@ -123,9 +313,12 @@ export default function TrainingsPage() {
               <input type="text" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="opcjonalnie" className={inputCls} />
             </div>
             {formError && <div className="sm:col-span-2 bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-lg">{formError}</div>}
-            <div className="sm:col-span-2">
+            <div className="sm:col-span-2 flex gap-3">
               <button type="submit" disabled={saving} className="bg-accent hover:bg-green-600 disabled:opacity-50 text-white font-semibold px-6 py-2 rounded-lg transition-colors text-sm">
                 {saving ? 'Zapisywanie...' : 'Zaplanuj trening'}
+              </button>
+              <button type="button" onClick={() => { setShowForm(false); setAiFilledLabel(''); }} className="text-sm text-muted hover:text-white px-3 py-2 rounded-lg transition-colors">
+                Anuluj
               </button>
             </div>
           </form>

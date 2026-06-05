@@ -7,9 +7,13 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import pl.pingpong.club.dto.TrainingParseRequest;
+import pl.pingpong.club.dto.TrainingParseResponse;
 import pl.pingpong.club.dto.TrainingRequest;
 import pl.pingpong.club.dto.TrainingResponse;
+import pl.pingpong.club.service.AnthropicService;
 import pl.pingpong.club.service.TrainingService;
+import pl.pingpong.club.service.UserService;
 
 import java.util.List;
 import java.util.UUID;
@@ -19,7 +23,9 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class TrainingController {
 
-    private final TrainingService trainingService;
+    private final TrainingService  trainingService;
+    private final UserService      userService;
+    private final AnthropicService anthropicService;
 
     /**
      * GET /api/trainings
@@ -82,5 +88,15 @@ public class TrainingController {
     @PreAuthorize("hasRole('COACH')")
     public TrainingResponse completeTraining(@PathVariable UUID id) {
         return trainingService.completeTraining(id);
+    }
+
+    /**
+     * POST /api/trainings/parse
+     * Tylko COACH. Parsuje tekst/dyktowanie przez Claude i zwraca pre-wypełnione pola formularza.
+     */
+    @PostMapping("/parse")
+    @PreAuthorize("hasRole('COACH')")
+    public TrainingParseResponse parseTraining(@Valid @RequestBody TrainingParseRequest request) {
+        return anthropicService.parseTrainingText(request.text(), userService.getAllPlayers());
     }
 }
