@@ -63,6 +63,15 @@ public class UserController {
         return userService.createCoach(request);
     }
 
+    /** DELETE /api/users/players/{playerId} — usuwa zawodnika z listy trenera (COACH). */
+    @DeleteMapping("/players/{playerId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasRole('COACH')")
+    public void removePlayer(@PathVariable UUID playerId,
+                             @AuthenticationPrincipal UserDetails caller) {
+        userService.removePlayerFromCoach(caller.getUsername(), playerId);
+    }
+
     /** DELETE /api/users/{id} — dezaktywacja konta (tylko ADMIN). */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")

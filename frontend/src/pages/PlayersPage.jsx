@@ -3,11 +3,12 @@ import client from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import Avatar from '../components/Avatar';
 import ConfirmDialog from '../components/ConfirmDialog';
-import { Link, Copy, Check, UserX, Mail, Send } from 'lucide-react';
+import { Link, Copy, Check, UserX, UserMinus, Mail, Send } from 'lucide-react';
 
 export default function PlayersPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
+  const isCoach = user?.role === 'COACH';
 
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -18,9 +19,10 @@ export default function PlayersPage() {
 
   const [joinEmail, setJoinEmail] = useState('');
   const [joinLoading, setJoinLoading] = useState(false);
-  const [joinResult, setJoinResult] = useState(null); // { ok: bool, message: string }
+  const [joinResult, setJoinResult] = useState(null);
 
   const [confirmDeactivate, setConfirmDeactivate] = useState(null);
+  const [confirmRemove, setConfirmRemove] = useState(null);
 
   async function fetchPlayers() {
     const { data } = await client.get('/users/players');
@@ -74,6 +76,12 @@ export default function PlayersPage() {
     await fetchPlayers();
   }
 
+  async function handleRemove(id) {
+    await client.delete(`/users/players/${id}`);
+    setConfirmRemove(null);
+    await fetchPlayers();
+  }
+
   if (loading) return <div className="max-w-6xl mx-auto px-6 py-12 text-center text-muted">Ładowanie...</div>;
 
   const active = players.filter(p => p.active).length;
@@ -86,6 +94,14 @@ export default function PlayersPage() {
           confirmLabel="Dezaktywuj"
           onConfirm={() => handleDeactivate(confirmDeactivate.id)}
           onCancel={() => setConfirmDeactivate(null)}
+        />
+      )}
+      {confirmRemove && (
+        <ConfirmDialog
+          message={`Usunąć ${confirmRemove.firstName} ${confirmRemove.lastName} ze swoich zawodników?`}
+          confirmLabel="Usuń"
+          onConfirm={() => handleRemove(confirmRemove.id)}
+          onCancel={() => setConfirmRemove(null)}
         />
       )}
 
@@ -188,15 +204,27 @@ export default function PlayersPage() {
                   }`}>
                     {p.active ? 'Aktywny' : 'Nieaktywny'}
                   </span>
-                  {p.active && isAdmin && (
-                    <button
-                      onClick={() => setConfirmDeactivate(p)}
-                      className="flex items-center gap-1.5 text-xs text-muted hover:text-red-400 transition-colors px-2 py-1"
-                    >
-                      <UserX size={12} />
-                      Dezaktywuj
-                    </button>
-                  )}
+                  <div className="flex items-center gap-1">
+                    {isCoach && (
+                      <button
+                        onClick={() => setConfirmRemove(p)}
+                        className="flex items-center gap-1.5 text-xs text-muted hover:text-orange-400 transition-colors px-2 py-1"
+                        title="Usuń ze swoich zawodników"
+                      >
+                        <UserMinus size={12} />
+                        Usuń
+                      </button>
+                    )}
+                    {p.active && isAdmin && (
+                      <button
+                        onClick={() => setConfirmDeactivate(p)}
+                        className="flex items-center gap-1.5 text-xs text-muted hover:text-red-400 transition-colors px-2 py-1"
+                      >
+                        <UserX size={12} />
+                        Dezaktywuj
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
