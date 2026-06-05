@@ -23,6 +23,7 @@ public class JoinRequestService {
 
     private final JoinRequestRepository joinRequestRepository;
     private final UserRepository userRepository;
+    private final EmailService emailService;
 
     /** COACH wysyła zaproszenie do zawodnika po emailu. */
     @Transactional
@@ -47,7 +48,9 @@ public class JoinRequestService {
                 .player(player)
                 .build();
 
-        return toResponse(joinRequestRepository.save(request));
+        JoinRequest saved = joinRequestRepository.save(request);
+        emailService.sendJoinRequestNotification(saved);
+        return toResponse(saved);
     }
 
     /** PLAYER pobiera listę oczekujących zaproszeń skierowanych do niego. */
