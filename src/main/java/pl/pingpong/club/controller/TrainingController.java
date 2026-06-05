@@ -11,7 +11,7 @@ import pl.pingpong.club.dto.TrainingParseRequest;
 import pl.pingpong.club.dto.TrainingParseResponse;
 import pl.pingpong.club.dto.TrainingRequest;
 import pl.pingpong.club.dto.TrainingResponse;
-import pl.pingpong.club.service.AnthropicService;
+import pl.pingpong.club.service.AiParseService;
 import pl.pingpong.club.service.TrainingService;
 import pl.pingpong.club.service.UserService;
 
@@ -23,9 +23,9 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class TrainingController {
 
-    private final TrainingService  trainingService;
-    private final UserService      userService;
-    private final AnthropicService anthropicService;
+    private final TrainingService trainingService;
+    private final UserService     userService;
+    private final AiParseService  aiParseService;
 
     /**
      * GET /api/trainings
@@ -97,6 +97,6 @@ public class TrainingController {
     @PostMapping("/parse")
     @PreAuthorize("hasRole('COACH')")
     public TrainingParseResponse parseTraining(@Valid @RequestBody TrainingParseRequest request) {
-        return anthropicService.parseTrainingText(request.text(), userService.getAllPlayers());
+        return aiParseService.parseTrainingText(request.text(), userService.getAllPlayers());
     }
 }
