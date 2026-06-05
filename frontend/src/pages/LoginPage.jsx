@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Target } from 'lucide-react';
 
 export default function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -40,6 +41,12 @@ export default function LoginPage() {
             <h1 className="text-2xl font-bold text-white">TTManager</h1>
             <p className="text-muted text-sm mt-1">Zaloguj się do systemu trenera</p>
           </div>
+
+          {location.state?.registered && (
+            <div className="bg-green-500/10 border border-green-500/30 text-green-400 text-sm px-4 py-3 rounded-lg mb-6">
+              Konto zostało utworzone. Możesz się teraz zalogować.
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-1.5">
