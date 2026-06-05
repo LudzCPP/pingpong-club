@@ -1,18 +1,26 @@
 import { useEffect, useState } from 'react';
 import client from '../api/client';
+import { useAuth } from '../context/AuthContext';
 import Avatar from '../components/Avatar';
 import ConfirmDialog from '../components/ConfirmDialog';
-import { Link, Copy, Check, UserX } from 'lucide-react';
+import { Link, Copy, Check, UserX, Mail, Send } from 'lucide-react';
 
 export default function PlayersPage() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'ADMIN';
+
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const [invite, setInvite] = useState(null); // { inviteUrl, expiresAt }
+  const [invite, setInvite] = useState(null);
   const [inviteLoading, setInviteLoading] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const [confirmDeactivate, setConfirmDeactivate] = useState(null); // player object
+  const [joinEmail, setJoinEmail] = useState('');
+  const [joinLoading, setJoinLoading] = useState(false);
+  const [joinResult, setJoinResult] = useState(null); // { ok: bool, message: string }
+
+  const [confirmDeactivate, setConfirmDeactivate] = useState(null);
 
   async function fetchPlayers() {
     const { data } = await client.get('/users/players');
@@ -42,6 +50,22 @@ export default function PlayersPage() {
     navigator.clipboard.writeText(invite.inviteUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  }
+
+  async function handleSendJoinRequest(e) {
+    e.preventDefault();
+    setJoinLoading(true);
+    setJoinResult(null);
+    try {
+      await client.post('/join-requests', { playerEmail: joinEmail });
+      setJoinResult({ ok: true, message: `Zaproszenie wysłane do ${joinEmail}` });
+      setJoinEmail('');
+    } catch (err) {
+      const msg = err.response?.data?.detail || 'Nie udało się wysłać zaproszenia';
+      setJoinResult({ ok: false, message: msg });
+    } finally {
+      setJoinLoading(false);
+    }
   }
 
   async function handleDeactivate(id) {
@@ -79,11 +103,11 @@ export default function PlayersPage() {
             className="flex items-center gap-2 bg-accent hover:bg-green-600 disabled:opacity-50 text-white font-semibold px-4 py-2 rounded-lg transition-colors text-sm"
           >
             <Link size={14} />
-            {inviteLoading ? 'Generowanie...' : 'Wygeneruj zaproszenie'}
+            {inviteLoading ? 'Generowanie...' : 'Nowe konto (link)'}
           </button>
         </div>
 
-        {/* Invite panel */}
+        {/* Invite link panel */}
         {invite && (
           <div className="bg-surface border border-border border-l-4 border-l-accent rounded-xl p-5">
             <p className="text-xs font-medium text-muted uppercase tracking-wide mb-3">Link zaproszenia (ważny 48h)</p>
@@ -111,6 +135,37 @@ export default function PlayersPage() {
           </div>
         )}
 
+        {/* Join request by email */}
+        <div className="bg-surface border border-border rounded-xl p-5">
+          <p className="text-xs font-medium text-muted uppercase tracking-wide mb-3 flex items-center gap-2">
+            <Mail size={13} />
+            Zaproś istniejącego zawodnika
+          </p>
+          <form onSubmit={handleSendJoinRequest} className="flex items-center gap-3">
+            <input
+              type="email"
+              required
+              placeholder="email@zawodnik.pl"
+              value={joinEmail}
+              onChange={e => { setJoinEmail(e.target.value); setJoinResult(null); }}
+              className="flex-1 bg-base border border-border rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-accent placeholder-slate-600"
+            />
+            <button
+              type="submit"
+              disabled={joinLoading || !joinEmail}
+              className="flex items-center gap-2 bg-accent hover:bg-green-600 disabled:opacity-50 text-white font-semibold px-4 py-2 rounded-lg transition-colors text-sm whitespace-nowrap"
+            >
+              <Send size={13} />
+              {joinLoading ? 'Wysyłanie...' : 'Wyślij zaproszenie'}
+            </button>
+          </form>
+          {joinResult && (
+            <p className={`text-sm mt-2 ${joinResult.ok ? 'text-green-400' : 'text-red-400'}`}>
+              {joinResult.message}
+            </p>
+          )}
+        </div>
+
         {/* Player cards grid */}
         {players.length === 0 ? (
           <div className="text-center text-muted py-16">Brak zawodników</div>
@@ -133,7 +188,7 @@ export default function PlayersPage() {
                   }`}>
                     {p.active ? 'Aktywny' : 'Nieaktywny'}
                   </span>
-                  {p.active && (
+                  {p.active && isAdmin && (
                     <button
                       onClick={() => setConfirmDeactivate(p)}
                       className="flex items-center gap-1.5 text-xs text-muted hover:text-red-400 transition-colors px-2 py-1"
