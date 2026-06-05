@@ -8,6 +8,7 @@ import TrainingsPage from './pages/TrainingsPage';
 import PlayersPage from './pages/PlayersPage';
 import FinancesPage from './pages/FinancesPage';
 import ReportsPage from './pages/ReportsPage';
+import CalendarPage from './pages/CalendarPage';
 import './index.css';
 
 function Layout({ children }) {
@@ -31,11 +32,14 @@ export default function App() {
           <Route path="/trainings" element={
             <PrivateRoute><Layout><TrainingsPage /></Layout></PrivateRoute>
           } />
+          <Route path="/calendar" element={
+            <PrivateRoute><Layout><CalendarPage /></Layout></PrivateRoute>
+          } />
           <Route path="/players" element={
             <PrivateRoute requireCoach><Layout><PlayersPage /></Layout></PrivateRoute>
           } />
           <Route path="/finances" element={
-            <PrivateRoute><Layout><FinancesPage /></Layout></PrivateRoute>
+            <PrivateRoute requireCoach><Layout><FinancesPage /></Layout></PrivateRoute>
           } />
           <Route path="/reports" element={
             <PrivateRoute requireCoach><Layout><ReportsPage /></Layout></PrivateRoute>

@@ -126,7 +126,7 @@ class TrainingServiceTest {
         given(trainingRepository.save(training)).willReturn(training);
         given(trainingMapper.toResponse(training)).willReturn(mock(TrainingResponse.class));
 
-        trainingService.completeTraining(id);
+        trainingService.completeTraining(id, null);
 
         assertThat(training.getStatus()).isEqualTo(TrainingStatus.COMPLETED);
     }
@@ -136,7 +136,7 @@ class TrainingServiceTest {
         UUID id = UUID.randomUUID();
         given(trainingRepository.findById(id)).willReturn(Optional.of(completedTraining()));
 
-        assertThatThrownBy(() -> trainingService.completeTraining(id))
+        assertThatThrownBy(() -> trainingService.completeTraining(id, null))
                 .isInstanceOf(BusinessRuleException.class)
                 .hasMessageContaining("Tylko zaplanowany trening");
     }
@@ -148,7 +148,7 @@ class TrainingServiceTest {
         cancelled.setStatus(TrainingStatus.CANCELLED);
         given(trainingRepository.findById(id)).willReturn(Optional.of(cancelled));
 
-        assertThatThrownBy(() -> trainingService.completeTraining(id))
+        assertThatThrownBy(() -> trainingService.completeTraining(id, null))
                 .isInstanceOf(BusinessRuleException.class);
     }
 

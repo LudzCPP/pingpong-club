@@ -7,6 +7,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import pl.pingpong.club.dto.CompleteTrainingRequest;
 import pl.pingpong.club.dto.TrainingParseRequest;
 import pl.pingpong.club.dto.TrainingParseResponse;
 import pl.pingpong.club.dto.TrainingRequest;
@@ -86,8 +87,15 @@ public class TrainingController {
      */
     @PatchMapping("/{id}/complete")
     @PreAuthorize("hasRole('COACH')")
-    public TrainingResponse completeTraining(@PathVariable UUID id) {
-        return trainingService.completeTraining(id);
+    public TrainingResponse completeTraining(@PathVariable UUID id,
+                                             @RequestBody(required = false) CompleteTrainingRequest request) {
+        return trainingService.completeTraining(id, request);
+    }
+
+    @PatchMapping("/{id}/paid")
+    @PreAuthorize("hasRole('COACH')")
+    public TrainingResponse togglePaid(@PathVariable UUID id) {
+        return trainingService.markPaid(id);
     }
 
     /**

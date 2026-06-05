@@ -3,7 +3,7 @@ import client from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import Avatar from '../components/Avatar';
 import StatusBadge from '../components/StatusBadge';
-import { Check, X, Plus, Mic, MicOff, Sparkles, Loader } from 'lucide-react';
+import { Check, X, Plus, Mic, MicOff, Sparkles, Loader, Banknote } from 'lucide-react';
 
 const FILTERS = ['Wszystkie', 'SCHEDULED', 'COMPLETED', 'CANCELLED'];
 const FILTER_LABEL = { Wszystkie: 'Wszystkie', SCHEDULED: 'Zaplanowane', COMPLETED: 'Zrealizowane', CANCELLED: 'Odwołane' };
@@ -33,6 +33,9 @@ export default function TrainingsPage() {
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
   const [aiFilledLabel, setAiFilledLabel] = useState('');
+
+  // Complete with notes modal
+  const [completing, setCompleting] = useState(null); // { id, notes }
 
   // AI panel
   const [showAiPanel, setShowAiPanel] = useState(false);
@@ -150,8 +153,19 @@ export default function TrainingsPage() {
     } finally { setSaving(false); }
   }
 
-  async function handleStatus(id, action) {
-    await client.patch(`/trainings/${id}/${action}`);
+  async function handleComplete(id, notes) {
+    await client.patch(`/trainings/${id}/complete`, notes?.trim() ? { notes } : null);
+    setCompleting(null);
+    await fetchTrainings();
+  }
+
+  async function handleCancel(id) {
+    await client.patch(`/trainings/${id}/cancel`);
+    await fetchTrainings();
+  }
+
+  async function handleTogglePaid(id) {
+    await client.patch(`/trainings/${id}/paid`);
     await fetchTrainings();
   }
 
@@ -176,6 +190,37 @@ export default function TrainingsPage() {
   if (loading) return <div className="max-w-6xl mx-auto px-6 py-12 text-center text-muted">Ładowanie...</div>;
 
   return (
+    <>
+    {/* Complete training modal */}
+    {completing && (
+      <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+        <div className="bg-surface border border-border rounded-xl p-6 w-full max-w-md shadow-2xl">
+          <h3 className="text-white font-semibold mb-1">Zakończ trening</h3>
+          <p className="text-sm text-muted mb-4">Dodaj notatkę z sesji — co ćwiczyliście? (opcjonalnie)</p>
+          <textarea
+            value={completing.notes}
+            onChange={e => setCompleting(c => ({ ...c, notes: e.target.value }))}
+            placeholder="np. Skupiliśmy się na bekhendie, świetna praca nad serwisem..."
+            rows={3}
+            className="w-full bg-base border border-border rounded-lg px-3 py-2 text-white text-sm placeholder-muted focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors resize-none"
+          />
+          <div className="flex gap-3 mt-4">
+            <button
+              onClick={() => handleComplete(completing.id, completing.notes)}
+              className="flex items-center gap-2 bg-accent hover:bg-green-600 text-white font-semibold px-5 py-2 rounded-lg transition-colors text-sm"
+            >
+              <Check size={14} /> Zakończ trening
+            </button>
+            <button
+              onClick={() => setCompleting(null)}
+              className="text-sm text-muted hover:text-white px-3 py-2 rounded-lg transition-colors"
+            >
+              Anuluj
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
     <div className="max-w-6xl mx-auto px-6 py-8 space-y-6">
 
       {/* Header */}
@@ -385,15 +430,29 @@ export default function TrainingsPage() {
                     <td className="px-4 py-3">
                       {t.status === 'SCHEDULED' && (
                         <div className="flex gap-1">
-                          <button onClick={() => handleStatus(t.id, 'complete')} title="Zakończ"
+                          <button onClick={() => setCompleting({ id: t.id, notes: '' })} title="Zakończ"
                             className="text-green-400 hover:bg-green-400/10 p-1.5 rounded transition-colors">
                             <Check size={14} />
                           </button>
-                          <button onClick={() => handleStatus(t.id, 'cancel')} title="Odwołaj"
+                          <button onClick={() => handleCancel(t.id)} title="Odwołaj"
                             className="text-red-400 hover:bg-red-400/10 p-1.5 rounded transition-colors">
                             <X size={14} />
                           </button>
                         </div>
+                      )}
+                      {t.status === 'COMPLETED' && (
+                        <button
+                          onClick={() => handleTogglePaid(t.id)}
+                          title={t.paid ? 'Oznacz jako niezapłacone' : 'Oznacz jako zapłacone'}
+                          className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border transition-colors ${
+                            t.paid
+                              ? 'bg-accent/20 text-accent border-accent/30 hover:bg-accent/10'
+                              : 'bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20'
+                          }`}
+                        >
+                          <Banknote size={11} />
+                          {t.paid ? 'Zapłacono' : 'Oczekuje'}
+                        </button>
                       )}
                     </td>
                   )}
@@ -404,5 +463,6 @@ export default function TrainingsPage() {
         )}
       </div>
     </div>
+    </>
   );
 }
