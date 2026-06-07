@@ -39,4 +39,8 @@ public class InviteToken {
     @Column(nullable = false)
     @Builder.Default
     private boolean used = false;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "virtual_player_id")
+    private User virtualPlayer;
 }

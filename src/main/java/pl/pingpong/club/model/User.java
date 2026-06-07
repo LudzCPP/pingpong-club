@@ -46,6 +46,10 @@ public class User implements UserDetails {
     @Builder.Default
     private boolean active = true;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean virtual = false;
+
     // Zawodnicy przypisani do tego trenera (wypełniane tylko dla COACH)
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(

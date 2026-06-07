@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(docker compose ps *)",
+      "PowerShell(npm *)",
+      "Bash(gh *)",
+      "PowerShell(gh auth *)",
+      "Skill(update-config)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(Get-ChildItem -Path \"E:\\\\projekt\" -Recurse -Force)"
+    ]
+  }
+}

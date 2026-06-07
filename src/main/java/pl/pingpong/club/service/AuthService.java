@@ -112,28 +112,78 @@ public class AuthService {
         }
 
         invite.setUsed(true);
-        Role targetRole = invite.getTargetRole();
 
-        User user = User.builder()
-                .firstName(request.firstName())
-                .lastName(request.lastName())
-                .email(request.email())
-                .password(passwordEncoder.encode(request.password()))
-                .role(targetRole)
-                .build();
+        User user;
+        if (invite.getVirtualPlayer() != null) {
+            // Przejęcie konta wirtualnego — aktualizujemy istniejącego usera
+            user = invite.getVirtualPlayer();
+            user.setFirstName(request.firstName());
+            user.setLastName(request.lastName());
+            user.setEmail(request.email());
+            user.setPassword(passwordEncoder.encode(request.password()));
+            user.setVirtual(false);
+            userRepository.save(user);
+        } else {
+            // Nowe konto
+            if (userRepository.existsByEmail(request.email())) {
+                throw new BusinessRuleException("Adres email jest już zajęty: " + request.email());
+            }
+            Role targetRole = invite.getTargetRole();
+            user = User.builder()
+                    .firstName(request.firstName())
+                    .lastName(request.lastName())
+                    .email(request.email())
+                    .password(passwordEncoder.encode(request.password()))
+                    .role(targetRole)
+                    .build();
+            userRepository.save(user);
 
-        userRepository.save(user);
-
-        if (targetRole == Role.PLAYER) {
-            User creator = invite.getCreatedBy();
-            if (creator.getRole() == Role.COACH) {
-                userRepository.addCoachPlayerLink(creator.getId(), user.getId());
+            if (targetRole == Role.PLAYER) {
+                User creator = invite.getCreatedBy();
+                if (creator.getRole() == Role.COACH) {
+                    userRepository.addCoachPlayerLink(creator.getId(), user.getId());
+                }
             }
         }
 
         String jwtToken = jwtService.generateToken(user);
         return new AuthResponse(jwtToken, user.getEmail(), user.getRole(),
                 jwtService.extractExpiration(jwtToken));
+    }
+
+    /** Generuje link zaproszenia do przejęcia konta wirtualnego zawodnika. */
+    @Transactional
+    public InviteResponse generateVirtualPlayerInvite(String coachEmail, UUID virtualPlayerId, String playerEmail) {
+        User coach = userRepository.findByEmail(coachEmail)
+                .orElseThrow(() -> new BusinessRuleException("Nie znaleziono użytkownika"));
+        User virtualPlayer = userRepository.findById(virtualPlayerId)
+                .orElseThrow(() -> new BusinessRuleException("Nie znaleziono zawodnika"));
+
+        if (!virtualPlayer.isVirtual()) {
+            throw new BusinessRuleException("Ten zawodnik ma już prawdziwe konto");
+        }
+        if (!userRepository.existsCoachPlayerLink(coach.getId(), virtualPlayerId)) {
+            throw new BusinessRuleException("Zawodnik nie należy do Twojej listy");
+        }
+        if (userRepository.existsByEmail(playerEmail)) {
+            throw new BusinessRuleException("Podany adres email jest już zajęty");
+        }
+
+        String rawToken = UUID.randomUUID().toString().replace("-", "");
+        LocalDateTime expiresAt = LocalDateTime.now().plusHours(48);
+
+        InviteToken invite = InviteToken.builder()
+                .token(rawToken)
+                .createdBy(coach)
+                .expiresAt(expiresAt)
+                .targetRole(Role.PLAYER)
+                .virtualPlayer(virtualPlayer)
+                .build();
+
+        inviteTokenRepository.save(invite);
+        String inviteUrl = frontendUrl + "/register?token=" + rawToken;
+        emailService.sendInviteEmail(playerEmail, inviteUrl, coach);
+        return new InviteResponse(inviteUrl, expiresAt);
     }
 
     /**
