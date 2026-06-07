@@ -1,0 +1,7 @@
+* text=auto
+
+fly.toml text eol=lf
+Dockerfile text eol=lf
+.java-version text eol=lf
+render.yaml text eol=lf
+railway.toml text eol=lf
