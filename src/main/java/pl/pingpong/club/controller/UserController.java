@@ -9,7 +9,11 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import pl.pingpong.club.dto.ChangePasswordRequest;
 import pl.pingpong.club.dto.CreateCoachRequest;
+import pl.pingpong.club.dto.CreateVirtualPlayerRequest;
+import pl.pingpong.club.dto.InviteVirtualPlayerRequest;
+import pl.pingpong.club.dto.InviteResponse;
 import pl.pingpong.club.dto.UserResponse;
+import pl.pingpong.club.service.AuthService;
 import pl.pingpong.club.service.UserService;
 
 import java.util.List;
@@ -21,6 +25,7 @@ import java.util.UUID;
 public class UserController {
 
     private final UserService userService;
+    private final AuthService authService;
 
     /** GET /api/users/me — profil zalogowanego użytkownika (COACH i PLAYER). */
     @GetMapping("/me")
@@ -61,6 +66,27 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     public UserResponse createCoach(@Valid @RequestBody CreateCoachRequest request) {
         return userService.createCoach(request);
+    }
+
+    /** POST /api/users/players/virtual — tworzy wirtualnego zawodnika (COACH). */
+    @PostMapping("/players/virtual")
+    @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasRole('COACH')")
+    public UserResponse createVirtualPlayer(
+            @Valid @RequestBody CreateVirtualPlayerRequest request,
+            @AuthenticationPrincipal UserDetails caller) {
+        return userService.createVirtualPlayer(caller.getUsername(), request);
+    }
+
+    /** POST /api/users/players/{id}/invite — wysyła invite do przejęcia wirtualnego konta (COACH). */
+    @PostMapping("/players/{id}/invite")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasRole('COACH')")
+    public void inviteVirtualPlayer(
+            @PathVariable UUID id,
+            @Valid @RequestBody InviteVirtualPlayerRequest request,
+            @AuthenticationPrincipal UserDetails caller) {
+        authService.generateVirtualPlayerInvite(caller.getUsername(), id, request.email());
     }
 
     /** DELETE /api/users/players/{playerId} — usuwa zawodnika z listy trenera (COACH). */

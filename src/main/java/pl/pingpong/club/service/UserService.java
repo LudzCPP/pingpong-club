@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.pingpong.club.dto.ChangePasswordRequest;
 import pl.pingpong.club.dto.CreateCoachRequest;
+import pl.pingpong.club.dto.CreateVirtualPlayerRequest;
 import pl.pingpong.club.dto.UserResponse;
 import pl.pingpong.club.exception.BusinessRuleException;
 import pl.pingpong.club.exception.ResourceNotFoundException;
@@ -69,6 +70,24 @@ public class UserService {
         }
         user.setPassword(passwordEncoder.encode(request.newPassword()));
         userRepository.save(user);
+    }
+
+    @Transactional
+    public UserResponse createVirtualPlayer(String coachEmail, CreateVirtualPlayerRequest request) {
+        User coach = findByEmail(coachEmail);
+
+        User player = User.builder()
+                .firstName(request.firstName())
+                .lastName(request.lastName())
+                .email("virtual-" + UUID.randomUUID() + "@ttmanager.internal")
+                .password(passwordEncoder.encode(UUID.randomUUID().toString()))
+                .role(Role.PLAYER)
+                .virtual(true)
+                .build();
+
+        userRepository.save(player);
+        userRepository.addCoachPlayerLink(coach.getId(), player.getId());
+        return userMapper.toResponse(player);
     }
 
     @Transactional
