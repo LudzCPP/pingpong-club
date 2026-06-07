@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Target } from 'lucide-react';
 
@@ -42,6 +42,12 @@ export default function LoginPage() {
             <p className="text-muted text-sm mt-1">Zaloguj się do systemu trenera</p>
           </div>
 
+          {location.state?.passwordReset && (
+            <div className="bg-green-500/10 border border-green-500/30 text-green-400 text-sm px-4 py-3 rounded-lg mb-6">
+              Hasło zostało zmienione. Możesz się teraz zalogować.
+            </div>
+          )}
+
           {location.state?.registered && (
             <div className="bg-green-500/10 border border-green-500/30 text-green-400 text-sm px-4 py-3 rounded-lg mb-6">
               Konto zostało utworzone. Możesz się teraz zalogować.
@@ -62,7 +68,12 @@ export default function LoginPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-muted">Hasło</label>
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-muted">Hasło</label>
+                <Link to="/forgot-password" className="text-xs text-muted hover:text-accent transition-colors">
+                  Nie pamiętasz hasła?
+                </Link>
+              </div>
               <input
                 type="password"
                 value={password}
