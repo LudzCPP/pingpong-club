@@ -178,10 +178,10 @@ class UserControllerTest {
     }
 
     private UserResponse playerResponse() {
-        return new UserResponse(UUID.randomUUID(), "Anna", "Nowak", "player@test.pl", Role.PLAYER, true);
+        return new UserResponse(UUID.randomUUID(), "Anna", "Nowak", "player@test.pl", Role.PLAYER, true, false);
     }
 
     private UserResponse coachResponse() {
-        return new UserResponse(UUID.randomUUID(), "Jan", "Trener", "jan@test.pl", Role.COACH, true);
+        return new UserResponse(UUID.randomUUID(), "Jan", "Trener", "jan@test.pl", Role.COACH, true, false);
     }
 }
