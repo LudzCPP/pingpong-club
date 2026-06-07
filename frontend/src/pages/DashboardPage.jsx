@@ -72,7 +72,7 @@ export default function DashboardPage() {
     setTrainings(ts => ts.map(t => t.id === id ? { ...t, status: 'CANCELLED' } : t));
   }
 
-  const firstName = isCoach ? 'Kacper' : (user?.email?.split('@')[0] ?? '');
+  const firstName = isCoach ? 'Trenerze' : (user?.email?.split('@')[0] ?? '');
 
   if (loading) {
     return (

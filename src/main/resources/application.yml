@@ -6,20 +6,19 @@ spring:
     import: optional:classpath:application-local.yml
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/pingpong_club
-    username: pingpong
-    password: pingpong_secret
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/pingpong_club}
+    username: ${DB_USERNAME:pingpong}
+    password: ${DB_PASSWORD:pingpong_secret}
     driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
-      ddl-auto: validate        # Flyway zarządza schematem — Hibernate tylko waliduje
-    open-in-view: false         # wyłącza WARN o lazy loading podczas renderowania widoku
+      ddl-auto: validate
+    open-in-view: false
     show-sql: false
     properties:
       hibernate:
         format_sql: true
-        # dialect usunięty – Hibernate 6 wykrywa PostgreSQL automatycznie
 
   flyway:
     enabled: true
@@ -36,7 +35,7 @@ spring:
       mail.smtp.starttls.enable: true
 
 server:
-  port: 8080
+  port: ${PORT:8080}
   servlet:
     context-path: /api
 
@@ -48,23 +47,17 @@ springdoc:
     path: /v3/api-docs
 
 ai:
-  # Provider zgodny z OpenAI Chat API. Zmień base-url + model żeby użyć innego.
-  # Groq (darmowy, ~14 000 req/dzień): https://console.groq.com → utwórz klucz API
-  base-url: https://api.groq.com/openai/v1
+  base-url: ${AI_BASE_URL:https://api.groq.com/openai/v1}
   api-key: ${AI_API_KEY:}
-  model: llama-3.3-70b-versatile
-  # OpenAI:  base-url: https://api.openai.com/v1   model: gpt-4o-mini
-  # Ollama:  base-url: http://localhost:11434/v1    model: llama3.2   api-key: ollama
+  model: ${AI_MODEL:llama-3.3-70b-versatile}
 
 app:
-  frontend-url: http://localhost:5173
+  frontend-url: ${FRONTEND_URL:http://localhost:5173}
   jwt:
-    # ZMIEŃ ten sekret przed deploymentem na produkcję!
-    # Wygeneruj: openssl rand -base64 64
-    secret: "dGhpcyBpcyBhIHZlcnkgbG9uZyBkZXZlbG9wbWVudCBzZWNyZXQga2V5IGZvciBwaW5ncG9uZyBjbHViIDIwMjQ="
-    expiration-ms: 86400000   # 24h
+    secret: ${JWT_SECRET:dGhpcyBpcyBhIHZlcnkgbG9uZyBkZXZlbG9wbWVudCBzZWNyZXQga2V5IGZvciBwaW5ncG9uZyBjbHViIDIwMjQ=}
+    expiration-ms: 86400000
 
 logging:
   level:
-    pl.pingpong.club: DEBUG
-    org.springframework.security: INFO
+    pl.pingpong.club: ${LOG_LEVEL:INFO}
+    org.springframework.security: WARN
