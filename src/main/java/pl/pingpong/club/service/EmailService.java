@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import pl.pingpong.club.model.JoinRequest;
 import pl.pingpong.club.model.Training;
+import pl.pingpong.club.model.User;
 
 import java.time.format.DateTimeFormatter;
 
@@ -79,6 +80,81 @@ public class EmailService {
         } catch (Exception e) {
             log.error("Błąd wysyłki emaila z zaproszeniem do {}: {}", request.getPlayer().getEmail(), e.getMessage());
         }
+    }
+
+    @Async
+    public void sendPasswordResetEmail(User user, String resetUrl) {
+        if (!StringUtils.hasText(fromAddress)) {
+            log.warn("MAIL_USERNAME nie jest skonfigurowany — pomijam wysyłkę emaila.");
+            return;
+        }
+        try {
+            var message = mailSender.createMimeMessage();
+            var helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromAddress);
+            helper.setTo(user.getEmail());
+            helper.setSubject("Resetowanie hasła — TTManager");
+            helper.setText(buildPasswordResetHtml(user.getFirstName(), resetUrl), true);
+
+            mailSender.send(message);
+            log.info("Email z resetem hasła wysłany do: {}", user.getEmail());
+        } catch (Exception e) {
+            log.error("Błąd wysyłki emaila z resetem hasła do {}: {}", user.getEmail(), e.getMessage());
+        }
+    }
+
+    private String buildPasswordResetHtml(String firstName, String resetUrl) {
+        return """
+                <!DOCTYPE html>
+                <html lang="pl">
+                <head><meta charset="UTF-8"></head>
+                <body style="margin:0;padding:0;background:#0f172a;font-family:'Segoe UI',sans-serif;">
+                  <table width="100%%" cellpadding="0" cellspacing="0" style="background:#0f172a;padding:40px 0;">
+                    <tr><td align="center">
+                      <table width="560" cellpadding="0" cellspacing="0"
+                             style="background:#1e293b;border-radius:12px;border:1px solid #334155;overflow:hidden;">
+                        <tr>
+                          <td style="background:#22c55e;padding:24px 32px;">
+                            <p style="margin:0;color:#fff;font-size:11px;font-weight:600;
+                                      letter-spacing:2px;text-transform:uppercase;">TTManager</p>
+                            <h1 style="margin:4px 0 0;color:#fff;font-size:22px;font-weight:700;">
+                              Resetowanie hasła
+                            </h1>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding:32px;">
+                            <p style="margin:0 0 24px;color:#94a3b8;font-size:15px;">
+                              Cześć <strong style="color:#f8fafc;">%s</strong>,<br>
+                              otrzymaliśmy prośbę o reset hasła do Twojego konta.
+                            </p>
+                            <table width="100%%" cellpadding="0" cellspacing="0">
+                              <tr>
+                                <td align="center" style="padding:8px 0 24px;">
+                                  <a href="%s"
+                                     style="display:inline-block;background:#22c55e;color:#fff;
+                                            text-decoration:none;font-weight:600;font-size:15px;
+                                            padding:14px 32px;border-radius:8px;">
+                                    Ustaw nowe hasło
+                                  </a>
+                                </td>
+                              </tr>
+                            </table>
+                            <p style="margin:0 0 8px;color:#64748b;font-size:13px;">
+                              Link jest ważny przez <strong style="color:#94a3b8;">1 godzinę</strong>.
+                            </p>
+                            <p style="margin:0;color:#64748b;font-size:12px;">
+                              Jeśli to nie Ty wysłałeś(-aś) tę prośbę, zignoruj tę wiadomość.
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td></tr>
+                  </table>
+                </body>
+                </html>
+                """.formatted(firstName, resetUrl);
     }
 
     private String buildJoinRequestHtml(String player, String coach) {

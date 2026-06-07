@@ -14,10 +14,13 @@ import pl.pingpong.club.dto.LoginRequest;
 import pl.pingpong.club.dto.RegisterRequest;
 import pl.pingpong.club.exception.BusinessRuleException;
 import pl.pingpong.club.model.InviteToken;
+import pl.pingpong.club.model.PasswordResetToken;
 import pl.pingpong.club.model.Role;
 import pl.pingpong.club.model.User;
 import pl.pingpong.club.repository.InviteTokenRepository;
+import pl.pingpong.club.repository.PasswordResetTokenRepository;
 import pl.pingpong.club.repository.UserRepository;
+import pl.pingpong.club.service.EmailService;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -28,9 +31,11 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final InviteTokenRepository inviteTokenRepository;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final EmailService emailService;
 
     @Value("${app.frontend-url}")
     private String frontendUrl;
@@ -129,5 +134,45 @@ public class AuthService {
         String jwtToken = jwtService.generateToken(user);
         return new AuthResponse(jwtToken, user.getEmail(), user.getRole(),
                 jwtService.extractExpiration(jwtToken));
+    }
+
+    /**
+     * Zawsze zwraca 200 — nie ujawnia czy email istnieje w bazie.
+     * Jeśli email jest znany, wysyła link reset hasła ważny 1h.
+     */
+    @Transactional
+    public void forgotPassword(String email) {
+        userRepository.findByEmail(email).ifPresent(user -> {
+            String rawToken = UUID.randomUUID().toString().replace("-", "");
+            PasswordResetToken resetToken = PasswordResetToken.builder()
+                    .token(rawToken)
+                    .user(user)
+                    .expiresAt(LocalDateTime.now().plusHours(1))
+                    .build();
+            passwordResetTokenRepository.save(resetToken);
+
+            String resetUrl = frontendUrl + "/reset-password?token=" + rawToken;
+            emailService.sendPasswordResetEmail(user, resetUrl);
+        });
+    }
+
+    @Transactional
+    public void resetPassword(String token, String newPassword) {
+        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token)
+                .orElseThrow(() -> new BusinessRuleException("Nieprawidłowy lub wygasły link resetowania hasła"));
+
+        if (resetToken.isUsed()) {
+            throw new BusinessRuleException("Link resetowania hasła został już wykorzystany");
+        }
+        if (resetToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new BusinessRuleException("Link resetowania hasła wygasł");
+        }
+
+        User user = resetToken.getUser();
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        resetToken.setUsed(true);
+        passwordResetTokenRepository.save(resetToken);
     }
 }

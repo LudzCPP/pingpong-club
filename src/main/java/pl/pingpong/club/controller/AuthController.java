@@ -8,9 +8,11 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import pl.pingpong.club.dto.AuthResponse;
+import pl.pingpong.club.dto.ForgotPasswordRequest;
 import pl.pingpong.club.dto.InviteResponse;
 import pl.pingpong.club.dto.LoginRequest;
 import pl.pingpong.club.dto.RegisterRequest;
+import pl.pingpong.club.dto.ResetPasswordRequest;
 import pl.pingpong.club.service.AuthService;
 
 @RestController
@@ -46,5 +48,17 @@ public class AuthController {
             @RequestParam String token
     ) {
         return authService.register(request, token);
+    }
+
+    @PostMapping("/forgot-password")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        authService.forgotPassword(request.email());
+    }
+
+    @PostMapping("/reset-password")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request.token(), request.newPassword());
     }
 }
