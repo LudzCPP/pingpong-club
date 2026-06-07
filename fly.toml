@@ -1,5 +1,5 @@
-app = "ttmanager-backend"
-primary_region = "fra"
+app = 'projekt-shy-ridge-9521'
+primary_region = 'fra'
 
 [build]
   dockerfile = "Dockerfile"
@@ -10,6 +10,7 @@ primary_region = "fra"
   auto_stop_machines = true
   auto_start_machines = true
   min_machines_running = 1
+  processes = ['app']
 
   [http_service.health_checks]
     grace_period = "60s"
@@ -19,6 +20,6 @@ primary_region = "fra"
     timeout = "10s"
 
 [[vm]]
-  memory = "256mb"
-  cpu_kind = "shared"
+  memory = '512mb'
+  cpu_kind = 'shared'
   cpus = 1
