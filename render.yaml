@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: ttmanager-backend
+    runtime: java
+    plan: free
+    buildCommand: mvn package -DskipTests
+    startCommand: java -jar target/*.jar
+    healthCheckPath: /api/actuator/health
+    envVars:
+      - key: DB_USERNAME
+        fromDatabase:
+          name: ttmanager-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: ttmanager-db
+          property: password
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        value: https://ttmanager.vercel.app
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+
+databases:
+  - name: ttmanager-db
+    plan: free
