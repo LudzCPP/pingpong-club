@@ -237,16 +237,10 @@ export default function TrainingsPage() {
     <div className="max-w-6xl mx-auto px-6 py-8 space-y-6">
 
       {/* Header */}
-      <div className="flex items-center justify-between gap-3">
-        <div>
+      <div className="space-y-2">
+        <div className="flex items-center justify-between gap-3">
           <h1 className="text-2xl font-bold text-white">Treningi</h1>
-          <p className="text-sm text-muted mt-1">
-            <span className="text-blue-300">{scheduled} zaplanowanych</span>
-            <span className="mx-2 text-border">·</span>
-            <span className="text-green-300">{completed} zrealizowanych</span>
-          </p>
-        </div>
-        {isCoach && (
+          {isCoach && (
           <div className="flex items-center gap-2">
             <button
               onClick={openAiPanel}
@@ -271,7 +265,13 @@ export default function TrainingsPage() {
               {showForm ? <><X size={14} /> Anuluj</> : <><Plus size={14} /> Nowy trening</>}
             </button>
           </div>
-        )}
+          )}
+        </div>
+        <p className="text-sm text-muted">
+          <span className="text-blue-300">{scheduled} zaplanowanych</span>
+          <span className="mx-2 text-border">·</span>
+          <span className="text-green-300">{completed} zrealizowanych</span>
+        </p>
       </div>
 
       {/* AI panel */}
