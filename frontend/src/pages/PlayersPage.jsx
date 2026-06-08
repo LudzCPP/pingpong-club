@@ -100,7 +100,7 @@ function AddVirtualPlayerModal({ onClose, onCreated }) {
           Zawodnik nie potrzebuje konta — możesz go zaprosić do rejestracji później.
         </p>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <input
               type="text"
               required
