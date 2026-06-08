@@ -29,7 +29,12 @@ function todayPolish() {
 export default function DashboardPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const isAdmin = user?.role === 'ADMIN';
   const isCoach = user?.role === 'COACH';
+
+  useEffect(() => {
+    if (isAdmin) navigate('/admin/dashboard', { replace: true });
+  }, [isAdmin, navigate]);
 
   const [trainings, setTrainings] = useState([]);
   const [players, setPlayers] = useState([]);

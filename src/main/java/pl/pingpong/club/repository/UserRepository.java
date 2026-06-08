@@ -36,4 +36,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     @Modifying
     @Query(value = "DELETE FROM coach_player WHERE coach_id = :coachId AND player_id = :playerId", nativeQuery = true)
     void removeCoachPlayerLink(@Param("coachId") UUID coachId, @Param("playerId") UUID playerId);
+
+    long countByRole(Role role);
+
+    long countByRoleAndActive(Role role, boolean active);
 }
