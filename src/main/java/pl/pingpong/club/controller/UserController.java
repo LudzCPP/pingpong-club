@@ -104,4 +104,11 @@ public class UserController {
     public UserResponse deactivateUser(@PathVariable UUID id) {
         return userService.deactivateUser(id);
     }
+
+    /** PATCH /api/users/{id}/activate — reaktywacja konta (tylko ADMIN). */
+    @PatchMapping("/{id}/activate")
+    @PreAuthorize("hasRole('ADMIN')")
+    public UserResponse activateUser(@PathVariable UUID id) {
+        return userService.activateUser(id);
+    }
 }
