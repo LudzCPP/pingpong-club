@@ -48,4 +48,9 @@ public interface TrainingRepository extends JpaRepository<Training, UUID> {
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end
     );
+
+    long countByStatus(TrainingStatus status);
+
+    @Query("SELECT COALESCE(SUM(t.totalPrice), 0) FROM Training t WHERE t.status = :status")
+    java.math.BigDecimal sumTotalPriceByStatus(@Param("status") TrainingStatus status);
 }

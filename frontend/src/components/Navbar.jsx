@@ -46,7 +46,7 @@ export default function Navbar() {
           </span>
 
           <div className="flex items-center gap-6 flex-1">
-            <NavLink to="/dashboard" className={linkCls}>Dashboard</NavLink>
+            <NavLink to={isAdmin ? '/admin/dashboard' : '/dashboard'} className={linkCls}>Dashboard</NavLink>
             <NavLink to="/trainings" className={linkCls}>Treningi</NavLink>
             <NavLink to="/calendar" className={linkCls}>Kalendarz</NavLink>
             {isCoach && <NavLink to="/players" className={linkCls}>Zawodnicy</NavLink>}
