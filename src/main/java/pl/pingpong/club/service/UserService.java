@@ -107,6 +107,14 @@ public class UserService {
         return userMapper.toResponse(userRepository.save(user));
     }
 
+    @Transactional
+    public UserResponse activateUser(UUID id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Nie znaleziono użytkownika o ID: " + id));
+        user.setActive(true);
+        return userMapper.toResponse(userRepository.save(user));
+    }
+
     private User findByEmail(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Nie znaleziono użytkownika: " + email));

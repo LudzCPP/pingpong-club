@@ -40,4 +40,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     long countByRole(Role role);
 
     long countByRoleAndActive(Role role, boolean active);
+
+    @Query("SELECT c FROM User c LEFT JOIN FETCH c.players WHERE c.role = :role")
+    List<User> findByRoleWithPlayers(@Param("role") Role role);
 }
