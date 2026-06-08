@@ -97,7 +97,7 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 bg-surface border border-border rounded-xl p-1 w-fit">
+        <div className="flex gap-1 bg-surface border border-border rounded-xl p-1 overflow-x-auto">
           {tabs.map(tab => (
             <button
               key={tab.id}
@@ -122,7 +122,7 @@ export default function AdminDashboardPage() {
               <StatCard icon={CalendarCheck} value={stats.completedTrainings} label="Treningi ukończone" />
               <StatCard icon={Banknote} value={`${Number(stats.totalEarnings).toFixed(0)} zł`} label="Łączne przychody" accent />
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <StatCard icon={CalendarDays} value={stats.scheduledTrainings} label="Zaplanowane treningi" />
               <StatCard icon={XCircle} value={stats.cancelledTrainings} label="Odwołane treningi" />
               <StatCard icon={Users} value={stats.totalPlayers} label="Wszyscy zawodnicy" />

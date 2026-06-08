@@ -70,25 +70,26 @@ export default function InvitationsPage() {
           {invitations.map(inv => (
             <div
               key={inv.id}
-              className="bg-surface border border-border rounded-xl p-5 flex items-center gap-5 hover:border-accent/40 transition-colors"
+              className="bg-surface border border-border rounded-xl p-5 flex flex-col sm:flex-row sm:items-center gap-4 hover:border-accent/40 transition-colors"
             >
-              <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold text-sm shrink-0">
-                {inv.coachFirstName[0]}{inv.coachLastName[0]}
+              <div className="flex items-center gap-4 flex-1 min-w-0">
+                <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold text-sm shrink-0">
+                  {inv.coachFirstName[0]}{inv.coachLastName[0]}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-white font-semibold">
+                    {inv.coachFirstName} {inv.coachLastName}
+                  </p>
+                  <p className="text-sm text-muted truncate">{inv.coachEmail}</p>
+                  <p className="text-xs text-slate-600 mt-0.5">Wysłano: {formatDate(inv.createdAt)}</p>
+                </div>
               </div>
 
-              <div className="flex-1 min-w-0">
-                <p className="text-white font-semibold">
-                  {inv.coachFirstName} {inv.coachLastName}
-                </p>
-                <p className="text-sm text-muted truncate">{inv.coachEmail}</p>
-                <p className="text-xs text-slate-600 mt-0.5">Wysłano: {formatDate(inv.createdAt)}</p>
-              </div>
-
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-2 sm:shrink-0">
                 <button
                   onClick={() => handleReject(inv.id)}
                   disabled={actionLoading === inv.id}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border border-border text-muted hover:text-red-400 hover:border-red-500/40 disabled:opacity-50 transition-colors"
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border border-border text-muted hover:text-red-400 hover:border-red-500/40 disabled:opacity-50 transition-colors"
                 >
                   <X size={14} />
                   Odrzuć
@@ -96,7 +97,7 @@ export default function InvitationsPage() {
                 <button
                   onClick={() => handleAccept(inv.id)}
                   disabled={actionLoading === inv.id}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium bg-accent hover:bg-green-600 disabled:opacity-50 text-white transition-colors"
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium bg-accent hover:bg-green-600 disabled:opacity-50 text-white transition-colors"
                 >
                   <Check size={14} />
                   Akceptuj

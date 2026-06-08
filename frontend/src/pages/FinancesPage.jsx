@@ -80,7 +80,7 @@ export default function FinancesPage() {
         </div>
 
         {/* Date filter */}
-        <div className="bg-surface border border-border rounded-xl px-5 py-4 flex items-end gap-4 flex-wrap">
+        <div className="bg-surface border border-border rounded-xl px-5 py-4 flex flex-col sm:flex-row items-stretch sm:items-end gap-4">
           <div className="space-y-1.5">
             <label className={labelCls}>Od</label>
             <input type="date" value={from} onChange={e => setFrom(e.target.value)} className={`${inputCls} w-auto`} />
@@ -149,51 +149,82 @@ export default function FinancesPage() {
           </div>
         )}
 
-        {/* Matches table */}
+        {/* Matches list */}
         <div className="bg-surface border border-border rounded-xl overflow-hidden">
           {matches.length === 0 ? (
             <p className="text-center text-muted py-12">Brak meczów ligowych</p>
           ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left px-4 py-3 text-xs text-muted uppercase tracking-wide">Zawodnik</th>
-                  <th className="text-left px-4 py-3 text-xs text-muted uppercase tracking-wide">Data</th>
-                  <th className="text-left px-4 py-3 text-xs text-muted uppercase tracking-wide hidden sm:table-cell">Przeciwnik</th>
-                  <th className="text-left px-4 py-3 text-xs text-muted uppercase tracking-wide">Wynik</th>
-                  <th className="text-left px-4 py-3 text-xs text-muted uppercase tracking-wide">Wypłata</th>
-                  {isCoach && <th className="px-4 py-3 text-xs text-muted uppercase tracking-wide">Akcje</th>}
-                </tr>
-              </thead>
-              <tbody>
+            <>
+              {/* Mobile: cards */}
+              <div className="sm:hidden divide-y divide-border">
                 {matches.map(m => (
-                  <tr key={m.id} className="border-b border-border/50 hover:bg-white/5 transition-colors last:border-0">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2.5">
+                  <div key={m.id} className="p-4 space-y-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
                         <Avatar firstName={m.playerFullName?.split(' ')[0]} lastName={m.playerFullName?.split(' ')[1]} size="sm" />
-                        <span className="text-white font-medium">{m.playerFullName}</span>
+                        <div className="min-w-0">
+                          <p className="text-white font-medium truncate">{m.playerFullName}</p>
+                          <p className="text-muted text-xs">{new Date(m.matchDate).toLocaleDateString('pl-PL')}</p>
+                        </div>
                       </div>
-                    </td>
-                    <td className="px-4 py-3 text-muted whitespace-nowrap">
-                      {new Date(m.matchDate).toLocaleDateString('pl-PL')}
-                    </td>
-                    <td className="px-4 py-3 text-muted hidden sm:table-cell">{m.opponent}</td>
-                    <td className="px-4 py-3">
-                      <span className="font-mono font-bold text-white bg-base border border-border px-2 py-0.5 rounded text-xs">{m.result}</span>
-                    </td>
-                    <td className="px-4 py-3 text-white font-semibold">{m.payment} zł</td>
-                    {isCoach && (
-                      <td className="px-4 py-3 text-center">
+                      {isCoach && (
                         <button onClick={() => handleMatchDelete(m.id)}
-                          className="text-muted hover:text-red-400 transition-colors p-1.5 rounded hover:bg-red-400/10" title="Usuń">
+                          className="text-muted hover:text-red-400 transition-colors p-1.5 rounded hover:bg-red-400/10 shrink-0">
                           <Trash2 size={14} />
                         </button>
-                      </td>
-                    )}
-                  </tr>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3 ml-11 text-sm">
+                      <span className="text-muted truncate">{m.opponent}</span>
+                      <span className="font-mono font-bold text-white bg-base border border-border px-2 py-0.5 rounded text-xs shrink-0">{m.result}</span>
+                      <span className="ml-auto text-white font-semibold shrink-0">{m.payment} zł</span>
+                    </div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
+              </div>
+
+              {/* Desktop: table */}
+              <table className="w-full text-sm hidden sm:table">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left px-4 py-3 text-xs text-muted uppercase tracking-wide">Zawodnik</th>
+                    <th className="text-left px-4 py-3 text-xs text-muted uppercase tracking-wide">Data</th>
+                    <th className="text-left px-4 py-3 text-xs text-muted uppercase tracking-wide">Przeciwnik</th>
+                    <th className="text-left px-4 py-3 text-xs text-muted uppercase tracking-wide">Wynik</th>
+                    <th className="text-left px-4 py-3 text-xs text-muted uppercase tracking-wide">Wypłata</th>
+                    {isCoach && <th className="px-4 py-3 text-xs text-muted uppercase tracking-wide">Akcje</th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {matches.map(m => (
+                    <tr key={m.id} className="border-b border-border/50 hover:bg-white/5 transition-colors last:border-0">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2.5">
+                          <Avatar firstName={m.playerFullName?.split(' ')[0]} lastName={m.playerFullName?.split(' ')[1]} size="sm" />
+                          <span className="text-white font-medium">{m.playerFullName}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-muted whitespace-nowrap">
+                        {new Date(m.matchDate).toLocaleDateString('pl-PL')}
+                      </td>
+                      <td className="px-4 py-3 text-muted">{m.opponent}</td>
+                      <td className="px-4 py-3">
+                        <span className="font-mono font-bold text-white bg-base border border-border px-2 py-0.5 rounded text-xs">{m.result}</span>
+                      </td>
+                      <td className="px-4 py-3 text-white font-semibold">{m.payment} zł</td>
+                      {isCoach && (
+                        <td className="px-4 py-3 text-center">
+                          <button onClick={() => handleMatchDelete(m.id)}
+                            className="text-muted hover:text-red-400 transition-colors p-1.5 rounded hover:bg-red-400/10" title="Usuń">
+                            <Trash2 size={14} />
+                          </button>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
           )}
         </div>
       </div>

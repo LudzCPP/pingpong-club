@@ -401,76 +401,132 @@ export default function TrainingsPage() {
         ))}
       </div>
 
-      {/* Table */}
+      {/* Trainings list */}
       <div className="bg-surface border border-border rounded-xl overflow-hidden">
         {visible.length === 0 ? (
           <p className="text-center text-muted py-12">Brak treningów</p>
         ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border">
-                <th className="text-left px-4 py-3 text-xs text-muted uppercase tracking-wide">Zawodnik</th>
-                <th className="text-left px-4 py-3 text-xs text-muted uppercase tracking-wide">Data</th>
-                <th className="text-left px-4 py-3 text-xs text-muted uppercase tracking-wide hidden sm:table-cell">Czas</th>
-                <th className="text-left px-4 py-3 text-xs text-muted uppercase tracking-wide">Kwota</th>
-                <th className="text-left px-4 py-3 text-xs text-muted uppercase tracking-wide">Status</th>
-                {isCoach && <th className="px-4 py-3 text-xs text-muted uppercase tracking-wide">Akcje</th>}
-              </tr>
-            </thead>
-            <tbody>
+          <>
+            {/* Mobile: cards */}
+            <div className="sm:hidden divide-y divide-border">
               {visible.map(t => (
-                <tr key={t.id} className="border-b border-border/50 hover:bg-white/5 transition-colors last:border-0">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2.5">
+                <div key={t.id} className="p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
                       <Avatar firstName={t.playerFullName?.split(' ')[0]} lastName={t.playerFullName?.split(' ')[1]} size="sm" />
-                      <div>
-                        <p className="text-white font-medium">{t.playerFullName}</p>
-                        <p className="text-muted text-xs">{t.name}</p>
+                      <div className="min-w-0">
+                        <p className="text-white font-medium truncate">{t.playerFullName}</p>
+                        <p className="text-muted text-xs">
+                          {new Date(t.scheduledAt).toLocaleString('pl-PL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                          {' · '}{t.durationMinutes} min
+                        </p>
                       </div>
                     </div>
-                  </td>
-                  <td className="px-4 py-3 text-muted whitespace-nowrap">
-                    {new Date(t.scheduledAt).toLocaleString('pl-PL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                  </td>
-                  <td className="px-4 py-3 text-muted hidden sm:table-cell">{t.durationMinutes} min</td>
-                  <td className="px-4 py-3 text-white font-semibold">
-                    {t.totalPrice != null ? `${Number(t.totalPrice).toFixed(0)} zł` : '—'}
-                  </td>
-                  <td className="px-4 py-3"><StatusBadge status={t.status} /></td>
-                  {isCoach && (
-                    <td className="px-4 py-3">
-                      {t.status === 'SCHEDULED' && (
-                        <div className="flex gap-1">
-                          <button onClick={() => setCompleting({ id: t.id, notes: '' })} title="Zakończ"
-                            className="text-green-400 hover:bg-green-400/10 p-1.5 rounded transition-colors">
-                            <Check size={14} />
+                    <StatusBadge status={t.status} />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-white font-semibold">
+                      {t.totalPrice != null ? `${Number(t.totalPrice).toFixed(0)} zł` : '—'}
+                    </span>
+                    {isCoach && (
+                      <div>
+                        {t.status === 'SCHEDULED' && (
+                          <div className="flex gap-2">
+                            <button onClick={() => setCompleting({ id: t.id, notes: '' })}
+                              className="flex items-center gap-1.5 text-xs font-medium text-green-400 border border-green-500/30 bg-green-500/10 hover:bg-green-500/20 px-2.5 py-1.5 rounded-lg transition-colors">
+                              <Check size={12} /> Zakończ
+                            </button>
+                            <button onClick={() => setConfirmCancel(t.id)}
+                              className="flex items-center gap-1.5 text-xs font-medium text-red-400 border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 px-2.5 py-1.5 rounded-lg transition-colors">
+                              <X size={12} /> Odwołaj
+                            </button>
+                          </div>
+                        )}
+                        {t.status === 'COMPLETED' && (
+                          <button onClick={() => handleTogglePaid(t.id)}
+                            className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-full border transition-colors ${
+                              t.paid
+                                ? 'bg-accent/20 text-accent border-accent/30'
+                                : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                            }`}>
+                            <Banknote size={11} />
+                            {t.paid ? 'Zapłacono' : 'Oczekuje'}
                           </button>
-                          <button onClick={() => setConfirmCancel(t.id)} title="Odwołaj"
-                            className="text-red-400 hover:bg-red-400/10 p-1.5 rounded transition-colors">
-                            <X size={14} />
-                          </button>
-                        </div>
-                      )}
-                      {t.status === 'COMPLETED' && (
-                        <button
-                          onClick={() => handleTogglePaid(t.id)}
-                          title={t.paid ? 'Oznacz jako niezapłacone' : 'Oznacz jako zapłacone'}
-                          className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border transition-colors ${
-                            t.paid
-                              ? 'bg-accent/20 text-accent border-accent/30 hover:bg-accent/10'
-                              : 'bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20'
-                          }`}
-                        >
-                          <Banknote size={11} />
-                          {t.paid ? 'Zapłacono' : 'Oczekuje'}
-                        </button>
-                      )}
-                    </td>
-                  )}
-                </tr>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+
+            {/* Desktop: table */}
+            <table className="w-full text-sm hidden sm:table">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="text-left px-4 py-3 text-xs text-muted uppercase tracking-wide">Zawodnik</th>
+                  <th className="text-left px-4 py-3 text-xs text-muted uppercase tracking-wide">Data</th>
+                  <th className="text-left px-4 py-3 text-xs text-muted uppercase tracking-wide">Czas</th>
+                  <th className="text-left px-4 py-3 text-xs text-muted uppercase tracking-wide">Kwota</th>
+                  <th className="text-left px-4 py-3 text-xs text-muted uppercase tracking-wide">Status</th>
+                  {isCoach && <th className="px-4 py-3 text-xs text-muted uppercase tracking-wide">Akcje</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {visible.map(t => (
+                  <tr key={t.id} className="border-b border-border/50 hover:bg-white/5 transition-colors last:border-0">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2.5">
+                        <Avatar firstName={t.playerFullName?.split(' ')[0]} lastName={t.playerFullName?.split(' ')[1]} size="sm" />
+                        <div>
+                          <p className="text-white font-medium">{t.playerFullName}</p>
+                          <p className="text-muted text-xs">{t.name}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-muted whitespace-nowrap">
+                      {new Date(t.scheduledAt).toLocaleString('pl-PL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    </td>
+                    <td className="px-4 py-3 text-muted">{t.durationMinutes} min</td>
+                    <td className="px-4 py-3 text-white font-semibold">
+                      {t.totalPrice != null ? `${Number(t.totalPrice).toFixed(0)} zł` : '—'}
+                    </td>
+                    <td className="px-4 py-3"><StatusBadge status={t.status} /></td>
+                    {isCoach && (
+                      <td className="px-4 py-3">
+                        {t.status === 'SCHEDULED' && (
+                          <div className="flex gap-1">
+                            <button onClick={() => setCompleting({ id: t.id, notes: '' })} title="Zakończ"
+                              className="text-green-400 hover:bg-green-400/10 p-1.5 rounded transition-colors">
+                              <Check size={14} />
+                            </button>
+                            <button onClick={() => setConfirmCancel(t.id)} title="Odwołaj"
+                              className="text-red-400 hover:bg-red-400/10 p-1.5 rounded transition-colors">
+                              <X size={14} />
+                            </button>
+                          </div>
+                        )}
+                        {t.status === 'COMPLETED' && (
+                          <button
+                            onClick={() => handleTogglePaid(t.id)}
+                            title={t.paid ? 'Oznacz jako niezapłacone' : 'Oznacz jako zapłacone'}
+                            className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border transition-colors ${
+                              t.paid
+                                ? 'bg-accent/20 text-accent border-accent/30 hover:bg-accent/10'
+                                : 'bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20'
+                            }`}
+                          >
+                            <Banknote size={11} />
+                            {t.paid ? 'Zapłacono' : 'Oczekuje'}
+                          </button>
+                        )}
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
         )}
       </div>
     </div>

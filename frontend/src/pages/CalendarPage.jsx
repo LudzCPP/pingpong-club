@@ -136,11 +136,11 @@ export default function CalendarPage() {
               <div
                 key={key}
                 onClick={() => setSelectedDay(day === selectedDay ? null : day)}
-                className={`min-h-[64px] p-2 border-b border-r border-border/30 cursor-pointer flex flex-col gap-1.5 transition-colors ${
+                className={`min-h-[44px] sm:min-h-[64px] p-1 sm:p-2 border-b border-r border-border/30 cursor-pointer flex flex-col gap-1 sm:gap-1.5 transition-colors ${
                   isSelected ? 'bg-accent/10 border-accent/20' : 'hover:bg-white/5'
                 }`}
               >
-                <span className={`text-sm w-7 h-7 flex items-center justify-center rounded-full font-medium self-start ${
+                <span className={`text-xs sm:text-sm w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center rounded-full font-medium self-start ${
                   isToday
                     ? 'bg-accent text-white font-bold'
                     : isSelected
@@ -203,7 +203,7 @@ export default function CalendarPage() {
           ) : (
             <ul className="divide-y divide-border">
               {selectedTrainings.map(t => (
-                <li key={t.id} className="px-6 py-4 flex items-center gap-4">
+                <li key={t.id} className="px-4 py-3 flex items-center gap-3">
                   <div className="w-16 flex-shrink-0 text-center">
                     <p className="text-white font-bold text-xl leading-none">
                       {new Date(t.scheduledAt).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })}

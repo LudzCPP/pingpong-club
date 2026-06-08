@@ -91,7 +91,7 @@ export default function ProfilePage() {
       <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
 
         {/* Hero */}
-        <div className="bg-surface border border-border rounded-2xl px-8 py-8 flex items-center gap-6">
+        <div className="bg-surface border border-border rounded-2xl px-6 py-6 flex items-center gap-5">
           <Avatar firstName={profile.firstName} lastName={profile.lastName} size="xl" />
           <div className="min-w-0">
             <h1 className="text-2xl font-bold text-white">{profile.firstName} {profile.lastName}</h1>
@@ -104,7 +104,7 @@ export default function ProfilePage() {
 
         {/* Stat cards — tylko dla COACH */}
         {isCoach && (
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <StatCard icon={Users} value={activePlayers} label="Aktywni zawodnicy" />
             <StatCard icon={CalendarCheck} value={summary?.completedTrainingsCount ?? 0} label="Treningi ukończone" />
             <StatCard

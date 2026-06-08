@@ -328,7 +328,7 @@ export default function PlayersPage() {
             <Mail size={13} />
             Zaproś istniejącego zawodnika
           </p>
-          <form onSubmit={handleSendJoinRequest} className="flex items-center gap-3">
+          <form onSubmit={handleSendJoinRequest} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <input
               type="email"
               required
@@ -340,7 +340,7 @@ export default function PlayersPage() {
             <button
               type="submit"
               disabled={joinLoading || !joinEmail}
-              className="flex items-center gap-2 bg-accent hover:bg-green-600 disabled:opacity-50 text-white font-semibold px-4 py-2 rounded-lg transition-colors text-sm whitespace-nowrap"
+              className="flex items-center justify-center gap-2 bg-accent hover:bg-green-600 disabled:opacity-50 text-white font-semibold px-4 py-2 rounded-lg transition-colors text-sm whitespace-nowrap"
             >
               <Send size={13} />
               {joinLoading ? 'Wysyłanie...' : 'Wyślij zaproszenie'}
