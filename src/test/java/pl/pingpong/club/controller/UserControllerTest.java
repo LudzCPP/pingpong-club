@@ -17,9 +17,13 @@ import pl.pingpong.club.config.SecurityConfig;
 import pl.pingpong.club.config.TestSecurityConfig;
 import pl.pingpong.club.dto.ChangePasswordRequest;
 import pl.pingpong.club.dto.CreateCoachRequest;
+import pl.pingpong.club.dto.CreateVirtualPlayerRequest;
+import pl.pingpong.club.dto.InviteVirtualPlayerRequest;
+import pl.pingpong.club.dto.UpdateProfileRequest;
 import pl.pingpong.club.dto.UserResponse;
 import pl.pingpong.club.exception.BusinessRuleException;
 import pl.pingpong.club.model.Role;
+import pl.pingpong.club.service.AuthService;
 import pl.pingpong.club.service.UserService;
 
 import java.util.List;
@@ -50,6 +54,7 @@ class UserControllerTest {
     @Autowired ObjectMapper objectMapper;
 
     @MockBean UserService userService;
+    @MockBean AuthService authService;
 
     @Test
     @WithMockUser(username = "player@test.pl", roles = "PLAYER")
@@ -177,11 +182,153 @@ class UserControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
+    // ---- PATCH /users/me (updateProfile) ----
+
+    @Test
+    @WithMockUser(username = "coach@test.pl", roles = "COACH")
+    void updateProfile_validRequest_returns200() throws Exception {
+        given(userService.updateProfile(anyString(), any())).willReturn(coachResponse());
+
+        mockMvc.perform(patch("/users/me")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new UpdateProfileRequest("Jan", "Trener"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.firstName").value("Jan"));
+    }
+
+    @Test
+    @WithMockUser(username = "coach@test.pl", roles = "COACH")
+    void updateProfile_blankFirstName_returns400() throws Exception {
+        mockMvc.perform(patch("/users/me")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new UpdateProfileRequest("", "Trener"))))
+                .andExpect(status().isBadRequest());
+    }
+
+    // ---- PATCH /users/{id}/activate ----
+
+    @Test
+    @WithMockUser(username = "admin@test.pl", roles = "ADMIN")
+    void activateUser_asAdmin_returns200() throws Exception {
+        UUID id = UUID.randomUUID();
+        given(userService.activateUser(id)).willReturn(playerResponse());
+
+        mockMvc.perform(patch("/users/{id}/activate", id).with(csrf()))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(username = "coach@test.pl", roles = "COACH")
+    void activateUser_asCoach_returns403() throws Exception {
+        mockMvc.perform(patch("/users/{id}/activate", UUID.randomUUID()).with(csrf()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(username = "player@test.pl", roles = "PLAYER")
+    void activateUser_asPlayer_returns403() throws Exception {
+        mockMvc.perform(patch("/users/{id}/activate", UUID.randomUUID()).with(csrf()))
+                .andExpect(status().isForbidden());
+    }
+
+    // ---- POST /users/players/virtual ----
+
+    @Test
+    @WithMockUser(username = "coach@test.pl", roles = "COACH")
+    void createVirtualPlayer_asCoach_returns201() throws Exception {
+        given(userService.createVirtualPlayer(anyString(), any())).willReturn(virtualPlayerResponse());
+
+        mockMvc.perform(post("/users/players/virtual")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new CreateVirtualPlayerRequest("Jan", "Wirtualny"))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.virtual").value(true));
+    }
+
+    @Test
+    @WithMockUser(username = "player@test.pl", roles = "PLAYER")
+    void createVirtualPlayer_asPlayer_returns403() throws Exception {
+        mockMvc.perform(post("/users/players/virtual")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new CreateVirtualPlayerRequest("Jan", "Wirtualny"))))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(username = "coach@test.pl", roles = "COACH")
+    void createVirtualPlayer_blankName_returns400() throws Exception {
+        mockMvc.perform(post("/users/players/virtual")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new CreateVirtualPlayerRequest("", "Wirtualny"))))
+                .andExpect(status().isBadRequest());
+    }
+
+    // ---- POST /users/players/{id}/invite ----
+
+    @Test
+    @WithMockUser(username = "coach@test.pl", roles = "COACH")
+    void inviteVirtualPlayer_asCoach_returns204() throws Exception {
+        given(authService.generateVirtualPlayerInvite(anyString(), any(), anyString())).willReturn(null);
+
+        mockMvc.perform(post("/users/players/{id}/invite", UUID.randomUUID())
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new InviteVirtualPlayerRequest("player@example.pl"))))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @WithMockUser(username = "player@test.pl", roles = "PLAYER")
+    void inviteVirtualPlayer_asPlayer_returns403() throws Exception {
+        mockMvc.perform(post("/users/players/{id}/invite", UUID.randomUUID())
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new InviteVirtualPlayerRequest("player@example.pl"))))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(username = "coach@test.pl", roles = "COACH")
+    void inviteVirtualPlayer_invalidEmail_returns400() throws Exception {
+        mockMvc.perform(post("/users/players/{id}/invite", UUID.randomUUID())
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new InviteVirtualPlayerRequest("not-an-email"))))
+                .andExpect(status().isBadRequest());
+    }
+
+    // ---- DELETE /users/players/{playerId} ----
+
+    @Test
+    @WithMockUser(username = "coach@test.pl", roles = "COACH")
+    void removePlayer_asCoach_returns204() throws Exception {
+        doNothing().when(userService).removePlayerFromCoach(anyString(), any());
+
+        mockMvc.perform(delete("/users/players/{id}", UUID.randomUUID()).with(csrf()))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @WithMockUser(username = "player@test.pl", roles = "PLAYER")
+    void removePlayer_asPlayer_returns403() throws Exception {
+        mockMvc.perform(delete("/users/players/{id}", UUID.randomUUID()).with(csrf()))
+                .andExpect(status().isForbidden());
+    }
+
     private UserResponse playerResponse() {
         return new UserResponse(UUID.randomUUID(), "Anna", "Nowak", "player@test.pl", Role.PLAYER, true, false);
     }
 
     private UserResponse coachResponse() {
         return new UserResponse(UUID.randomUUID(), "Jan", "Trener", "jan@test.pl", Role.COACH, true, false);
+    }
+
+    private UserResponse virtualPlayerResponse() {
+        return new UserResponse(UUID.randomUUID(), "Jan", "Wirtualny", "virtual-x@ttmanager.internal", Role.PLAYER, true, true);
     }
 }

@@ -8,6 +8,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import pl.pingpong.club.dto.ChangePasswordRequest;
 import pl.pingpong.club.dto.CreateCoachRequest;
+import pl.pingpong.club.dto.CreateVirtualPlayerRequest;
+import pl.pingpong.club.dto.UpdateProfileRequest;
 import pl.pingpong.club.dto.UserResponse;
 import pl.pingpong.club.exception.BusinessRuleException;
 import pl.pingpong.club.exception.ResourceNotFoundException;
@@ -24,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -157,6 +160,79 @@ class UserServiceTest {
                 "player@test.pl", new ChangePasswordRequest("wrongPass", "newPass1")))
                 .isInstanceOf(BusinessRuleException.class)
                 .hasMessageContaining("nieprawidłowe");
+    }
+
+    @Test
+    void updateProfile_trimsAndSavesFirstAndLastName() {
+        User user = playerUser();
+        given(userRepository.findByEmail("player@test.pl")).willReturn(Optional.of(user));
+        given(userRepository.save(user)).willReturn(user);
+        given(userMapper.toResponse(user)).willReturn(mock(UserResponse.class));
+
+        userService.updateProfile("player@test.pl", new UpdateProfileRequest("  New  ", "  Last  "));
+
+        verify(userRepository).save(argThat(u -> "New".equals(u.getFirstName()) && "Last".equals(u.getLastName())));
+    }
+
+    @Test
+    void activateUser_setsActiveTrue() {
+        UUID id = UUID.randomUUID();
+        User user = playerUser();
+        user.setActive(false);
+        given(userRepository.findById(id)).willReturn(Optional.of(user));
+        given(userRepository.save(user)).willReturn(user);
+        given(userMapper.toResponse(user)).willReturn(mock(UserResponse.class));
+
+        userService.activateUser(id);
+
+        assertThat(user.isActive()).isTrue();
+    }
+
+    @Test
+    void activateUser_notFound_throwsResourceNotFoundException() {
+        UUID id = UUID.randomUUID();
+        given(userRepository.findById(id)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> userService.activateUser(id))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void createVirtualPlayer_savesVirtualPlayerAndAddsCoachLink() {
+        User coach = coachUser();
+        given(userRepository.findByEmail("coach@test.pl")).willReturn(Optional.of(coach));
+        given(passwordEncoder.encode(any())).willReturn("hashed");
+        given(userRepository.save(any())).willAnswer(inv -> inv.getArgument(0));
+        given(userMapper.toResponse(any())).willReturn(mock(UserResponse.class));
+
+        userService.createVirtualPlayer("coach@test.pl", new CreateVirtualPlayerRequest("Jan", "Wirtualny"));
+
+        verify(userRepository).save(argThat(u -> u.isVirtual() && u.getRole() == Role.PLAYER
+                && "Jan".equals(u.getFirstName())));
+        verify(userRepository).addCoachPlayerLink(eq(coach.getId()), any());
+    }
+
+    @Test
+    void removePlayerFromCoach_existingLink_removesLink() {
+        User coach = coachUser();
+        UUID playerId = UUID.randomUUID();
+        given(userRepository.findByEmail("coach@test.pl")).willReturn(Optional.of(coach));
+        given(userRepository.existsCoachPlayerLink(coach.getId(), playerId)).willReturn(true);
+
+        userService.removePlayerFromCoach("coach@test.pl", playerId);
+
+        verify(userRepository).removeCoachPlayerLink(coach.getId(), playerId);
+    }
+
+    @Test
+    void removePlayerFromCoach_linkNotFound_throwsResourceNotFoundException() {
+        User coach = coachUser();
+        UUID playerId = UUID.randomUUID();
+        given(userRepository.findByEmail("coach@test.pl")).willReturn(Optional.of(coach));
+        given(userRepository.existsCoachPlayerLink(coach.getId(), playerId)).willReturn(false);
+
+        assertThatThrownBy(() -> userService.removePlayerFromCoach("coach@test.pl", playerId))
+                .isInstanceOf(ResourceNotFoundException.class);
     }
 
     private User playerUser() {
