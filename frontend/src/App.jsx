@@ -15,6 +15,7 @@ import ReportsPage from './pages/ReportsPage';
 import CalendarPage from './pages/CalendarPage';
 import InvitationsPage from './pages/InvitationsPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
+import ProfilePage from './pages/ProfilePage';
 import './index.css';
 
 function Layout({ children }) {
@@ -61,6 +62,9 @@ export default function App() {
           } />
           <Route path="/admin/dashboard" element={
             <PrivateRoute requireAdmin><Layout><AdminDashboardPage /></Layout></PrivateRoute>
+          } />
+          <Route path="/profile" element={
+            <PrivateRoute><Layout><ProfilePage /></Layout></PrivateRoute>
           } />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>

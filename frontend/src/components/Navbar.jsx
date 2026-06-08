@@ -1,8 +1,6 @@
-import { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Target, LogOut, KeyRound } from 'lucide-react';
-import ChangePasswordModal from './ChangePasswordModal';
+import { Target, LogOut } from 'lucide-react';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -10,8 +8,6 @@ export default function Navbar() {
   const isAdmin = user?.role === 'ADMIN';
   const isCoach = user?.role === 'COACH' || isAdmin;
   const isPlayer = user?.role === 'PLAYER';
-  const [showChangePassword, setShowChangePassword] = useState(false);
-
   function handleLogout() {
     logout();
     navigate('/login');
@@ -33,51 +29,43 @@ export default function Navbar() {
   const roleLabel = isAdmin ? 'Admin' : isPlayer ? 'Zawodnik' : 'Trener';
 
   return (
-    <>
-      {showChangePassword && (
-        <ChangePasswordModal onClose={() => setShowChangePassword(false)} />
-      )}
+    <nav className="bg-surface border-b border-border sticky top-0 z-50">
+      <div className="max-w-6xl mx-auto px-6 h-14 flex items-center gap-8">
+        <span className="text-white font-bold text-lg whitespace-nowrap flex items-center gap-2">
+          <Target size={18} className="text-accent" />
+          TTManager
+        </span>
 
-      <nav className="bg-surface border-b border-border sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center gap-8">
-          <span className="text-white font-bold text-lg whitespace-nowrap flex items-center gap-2">
-            <Target size={18} className="text-accent" />
-            TTManager
-          </span>
+        <div className="flex items-center gap-6 flex-1">
+          <NavLink to={isAdmin ? '/admin/dashboard' : '/dashboard'} className={linkCls}>Dashboard</NavLink>
+          <NavLink to="/trainings" className={linkCls}>Treningi</NavLink>
+          <NavLink to="/calendar" className={linkCls}>Kalendarz</NavLink>
+          {isCoach && <NavLink to="/players" className={linkCls}>Zawodnicy</NavLink>}
+          {isAdmin && <NavLink to="/coaches" className={linkCls}>Trenerzy</NavLink>}
+          {isCoach && <NavLink to="/finances" className={linkCls}>Finanse</NavLink>}
+          {isCoach && <NavLink to="/reports" className={linkCls}>Raporty</NavLink>}
+          {isPlayer && <NavLink to="/invitations" className={linkCls}>Zaproszenia</NavLink>}
+        </div>
 
-          <div className="flex items-center gap-6 flex-1">
-            <NavLink to={isAdmin ? '/admin/dashboard' : '/dashboard'} className={linkCls}>Dashboard</NavLink>
-            <NavLink to="/trainings" className={linkCls}>Treningi</NavLink>
-            <NavLink to="/calendar" className={linkCls}>Kalendarz</NavLink>
-            {isCoach && <NavLink to="/players" className={linkCls}>Zawodnicy</NavLink>}
-            {isAdmin && <NavLink to="/coaches" className={linkCls}>Trenerzy</NavLink>}
-            {isCoach && <NavLink to="/finances" className={linkCls}>Finanse</NavLink>}
-            {isCoach && <NavLink to="/reports" className={linkCls}>Raporty</NavLink>}
-            {isPlayer && <NavLink to="/invitations" className={linkCls}>Zaproszenia</NavLink>}
-          </div>
-
-          <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <Link
+            to="/profile"
+            className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-white/5 transition-colors group"
+          >
             <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${roleBadge}`}>
               {roleLabel}
             </span>
-            <span className="text-sm text-muted hidden sm:block">{user?.email}</span>
-            <button
-              onClick={() => setShowChangePassword(true)}
-              className="text-muted hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-colors"
-              title="Zmień hasło"
-            >
-              <KeyRound size={16} />
-            </button>
-            <button
-              onClick={handleLogout}
-              className="text-muted hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-colors"
-              title="Wyloguj"
-            >
-              <LogOut size={16} />
-            </button>
-          </div>
+            <span className="text-sm text-muted hidden sm:block group-hover:text-white transition-colors">{user?.email}</span>
+          </Link>
+          <button
+            onClick={handleLogout}
+            className="text-muted hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+            title="Wyloguj"
+          >
+            <LogOut size={16} />
+          </button>
         </div>
-      </nav>
-    </>
+      </div>
+    </nav>
   );
 }
