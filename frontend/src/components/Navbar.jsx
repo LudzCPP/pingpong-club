@@ -1,23 +1,32 @@
-import { NavLink, Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Target, LogOut } from 'lucide-react';
+import { Target, LogOut, Menu, X } from 'lucide-react';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const isAdmin = user?.role === 'ADMIN';
   const isCoach = user?.role === 'COACH' || isAdmin;
   const isPlayer = user?.role === 'PLAYER';
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => { setMenuOpen(false); }, [location.pathname]);
+
   function handleLogout() {
     logout();
     navigate('/login');
   }
 
-  const linkCls = ({ isActive }) =>
-    `text-sm font-medium transition-colors pb-0.5 ${
-      isActive
-        ? 'text-accent border-b-2 border-accent'
-        : 'text-muted hover:text-white'
+  const desktopLinkCls = ({ isActive }) =>
+    `text-sm font-medium transition-colors pb-0.5 whitespace-nowrap ${
+      isActive ? 'text-accent border-b-2 border-accent' : 'text-muted hover:text-white'
+    }`;
+
+  const mobileLinkCls = ({ isActive }) =>
+    `block px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+      isActive ? 'bg-accent/20 text-accent' : 'text-muted hover:text-white hover:bg-white/5'
     }`;
 
   const roleBadge = isAdmin
@@ -25,29 +34,44 @@ export default function Navbar() {
     : isPlayer
       ? 'bg-blue-500/20 text-blue-300 border-blue-500/30'
       : 'bg-accent/20 text-accent border-accent/30';
-
   const roleLabel = isAdmin ? 'Admin' : isPlayer ? 'Zawodnik' : 'Trener';
+
+  const dashboardTo = isAdmin ? '/admin/dashboard' : '/dashboard';
+
+  const navLinks = [
+    { to: dashboardTo, label: 'Dashboard', show: true },
+    { to: '/trainings', label: 'Treningi', show: true },
+    { to: '/calendar', label: 'Kalendarz', show: true },
+    { to: '/players', label: 'Zawodnicy', show: isCoach },
+    { to: '/coaches', label: 'Trenerzy', show: isAdmin },
+    { to: '/finances', label: 'Finanse', show: isCoach },
+    { to: '/reports', label: 'Raporty', show: isCoach },
+    { to: '/invitations', label: 'Zaproszenia', show: isPlayer },
+    { to: '/profile', label: 'Profil', show: true, mobileOnly: true },
+  ];
+
+  const visibleLinks = navLinks.filter(l => l.show);
+  const desktopLinks = visibleLinks.filter(l => !l.mobileOnly);
 
   return (
     <nav className="bg-surface border-b border-border sticky top-0 z-50">
-      <div className="max-w-6xl mx-auto px-6 h-14 flex items-center gap-8">
-        <span className="text-white font-bold text-lg whitespace-nowrap flex items-center gap-2">
-          <Target size={18} className="text-accent" />
-          TTManager
-        </span>
+      <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
 
-        <div className="flex items-center gap-6 flex-1">
-          <NavLink to={isAdmin ? '/admin/dashboard' : '/dashboard'} className={linkCls}>Dashboard</NavLink>
-          <NavLink to="/trainings" className={linkCls}>Treningi</NavLink>
-          <NavLink to="/calendar" className={linkCls}>Kalendarz</NavLink>
-          {isCoach && <NavLink to="/players" className={linkCls}>Zawodnicy</NavLink>}
-          {isAdmin && <NavLink to="/coaches" className={linkCls}>Trenerzy</NavLink>}
-          {isCoach && <NavLink to="/finances" className={linkCls}>Finanse</NavLink>}
-          {isCoach && <NavLink to="/reports" className={linkCls}>Raporty</NavLink>}
-          {isPlayer && <NavLink to="/invitations" className={linkCls}>Zaproszenia</NavLink>}
+        {/* Logo */}
+        <Link to={dashboardTo} className="text-white font-bold text-lg flex items-center gap-2 shrink-0">
+          <Target size={18} className="text-accent" />
+          <span className="hidden xs:inline">TTManager</span>
+        </Link>
+
+        {/* Desktop links */}
+        <div className="hidden md:flex items-center gap-5 flex-1 overflow-hidden">
+          {desktopLinks.map(l => (
+            <NavLink key={l.to} to={l.to} className={desktopLinkCls}>{l.label}</NavLink>
+          ))}
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* Desktop right */}
+        <div className="hidden md:flex items-center gap-2 shrink-0">
           <Link
             to="/profile"
             className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-white/5 transition-colors group"
@@ -55,7 +79,7 @@ export default function Navbar() {
             <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${roleBadge}`}>
               {roleLabel}
             </span>
-            <span className="text-sm text-muted hidden sm:block group-hover:text-white transition-colors">{user?.email}</span>
+            <span className="text-sm text-muted hidden lg:block group-hover:text-white transition-colors">{user?.email}</span>
           </Link>
           <button
             onClick={handleLogout}
@@ -65,7 +89,44 @@ export default function Navbar() {
             <LogOut size={16} />
           </button>
         </div>
+
+        {/* Mobile: badge + hamburger */}
+        <div className="flex md:hidden items-center gap-2 shrink-0">
+          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${roleBadge}`}>
+            {roleLabel}
+          </span>
+          <button
+            onClick={() => setMenuOpen(o => !o)}
+            className="text-muted hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+            aria-label="Otwórz menu"
+          >
+            {menuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
       </div>
+
+      {/* Mobile dropdown menu */}
+      {menuOpen && (
+        <div className="md:hidden border-t border-border bg-surface shadow-lg">
+          <div className="max-w-6xl mx-auto px-4 py-3 space-y-0.5">
+            {visibleLinks.map(l => (
+              <NavLink key={l.to} to={l.to} className={mobileLinkCls}>
+                {l.label}
+              </NavLink>
+            ))}
+            <div className="border-t border-border pt-3 mt-3 flex items-center justify-between px-3">
+              <span className="text-muted text-sm truncate mr-4">{user?.email}</span>
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 text-muted hover:text-white text-sm transition-colors shrink-0"
+              >
+                <LogOut size={14} />
+                Wyloguj
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </nav>
   );
 }
