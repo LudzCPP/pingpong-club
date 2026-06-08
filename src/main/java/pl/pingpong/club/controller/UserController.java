@@ -12,6 +12,7 @@ import pl.pingpong.club.dto.CreateCoachRequest;
 import pl.pingpong.club.dto.CreateVirtualPlayerRequest;
 import pl.pingpong.club.dto.InviteVirtualPlayerRequest;
 import pl.pingpong.club.dto.InviteResponse;
+import pl.pingpong.club.dto.UpdateProfileRequest;
 import pl.pingpong.club.dto.UserResponse;
 import pl.pingpong.club.service.AuthService;
 import pl.pingpong.club.service.UserService;
@@ -31,6 +32,15 @@ public class UserController {
     @GetMapping("/me")
     public UserResponse getMyProfile(@AuthenticationPrincipal UserDetails user) {
         return userService.getMyProfile(user.getUsername());
+    }
+
+    /** PATCH /api/users/me — aktualizacja imienia i nazwiska. */
+    @PatchMapping("/me")
+    public UserResponse updateProfile(
+            @AuthenticationPrincipal UserDetails user,
+            @Valid @RequestBody UpdateProfileRequest request
+    ) {
+        return userService.updateProfile(user.getUsername(), request);
     }
 
     /** PATCH /api/users/me/password — zmiana hasła zalogowanego użytkownika. */

@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import pl.pingpong.club.dto.ChangePasswordRequest;
 import pl.pingpong.club.dto.CreateCoachRequest;
 import pl.pingpong.club.dto.CreateVirtualPlayerRequest;
+import pl.pingpong.club.dto.UpdateProfileRequest;
 import pl.pingpong.club.dto.UserResponse;
 import pl.pingpong.club.exception.BusinessRuleException;
 import pl.pingpong.club.exception.ResourceNotFoundException;
@@ -60,6 +61,14 @@ public class UserService {
                 .build();
 
         return userMapper.toResponse(userRepository.save(coach));
+    }
+
+    @Transactional
+    public UserResponse updateProfile(String email, UpdateProfileRequest request) {
+        User user = findByEmail(email);
+        user.setFirstName(request.firstName().trim());
+        user.setLastName(request.lastName().trim());
+        return userMapper.toResponse(userRepository.save(user));
     }
 
     @Transactional
