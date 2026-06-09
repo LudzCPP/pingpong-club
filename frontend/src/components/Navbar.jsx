@@ -64,15 +64,15 @@ export default function Navbar() {
 
   return (
     <nav className="bg-surface border-b border-border sticky top-0 z-50">
-      <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
+      <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between gap-6">
 
         {/* Logo */}
-        <Link to={dashboardTo} className="flex items-center gap-2 shrink-0">
-          <div className="bg-accent/10 border border-accent/25 p-1.5 rounded-lg">
-            <Target size={16} className="text-accent" />
+        <Link to={dashboardTo} className="flex items-center gap-3 shrink-0 group">
+          <div className="bg-accent/15 border border-accent/30 p-2 rounded-xl group-hover:bg-accent/25 transition-colors">
+            <Target size={17} className="text-accent" />
           </div>
-          <span className="font-bold text-[1rem] tracking-tight">
-            <span className="text-accent">TT</span><span className="text-white">Manager</span>
+          <span className="font-bold tracking-tight leading-none">
+            <span className="text-accent text-lg">TT</span><span className="text-white text-lg">Manager</span>
           </span>
         </Link>
 

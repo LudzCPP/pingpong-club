@@ -8,5 +8,6 @@ public record AuthResponse(
         String token,
         String email,
         Role role,
-        Instant expiresAt
+        Instant expiresAt,
+        String firstName
 ) {}

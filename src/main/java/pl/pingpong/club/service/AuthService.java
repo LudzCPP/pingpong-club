@@ -49,7 +49,7 @@ public class AuthService {
 
         String token = jwtService.generateToken(user);
         return new AuthResponse(token, user.getEmail(), user.getRole(),
-                jwtService.extractExpiration(token));
+                jwtService.extractExpiration(token), user.getFirstName());
     }
 
     /** Generuje link zaproszenia dla zawodnika (COACH lub ADMIN wywołuje). */
@@ -148,7 +148,7 @@ public class AuthService {
 
         String jwtToken = jwtService.generateToken(user);
         return new AuthResponse(jwtToken, user.getEmail(), user.getRole(),
-                jwtService.extractExpiration(jwtToken));
+                jwtService.extractExpiration(jwtToken), user.getFirstName());
     }
 
     /** Generuje link zaproszenia do przejęcia konta wirtualnego zawodnika. */
