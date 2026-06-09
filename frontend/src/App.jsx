@@ -1,7 +1,10 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { useAuth } from './context/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
 import Navbar from './components/Navbar';
+import OnboardingModal from './components/OnboardingModal';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
@@ -27,10 +30,36 @@ function Layout({ children }) {
   );
 }
 
+function OnboardingGate() {
+  const { user } = useAuth();
+  const location = useLocation();
+  const [show, setShow] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    const key = `onboarded_${user.email}`;
+    if (!localStorage.getItem(key)) {
+      setShow(true);
+    }
+  }, [user]);
+
+  const publicPaths = ['/login', '/register', '/forgot-password', '/reset-password'];
+  if (!user || publicPaths.some(p => location.pathname.startsWith(p))) return null;
+  if (!show) return null;
+
+  function handleClose() {
+    localStorage.setItem(`onboarded_${user.email}`, '1');
+    setShow(false);
+  }
+
+  return <OnboardingModal role={user.role} onClose={handleClose} />;
+}
+
 export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <OnboardingGate />
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
