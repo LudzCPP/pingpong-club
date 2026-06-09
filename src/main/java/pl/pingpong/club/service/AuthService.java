@@ -15,10 +15,12 @@ import pl.pingpong.club.dto.RegisterRequest;
 import pl.pingpong.club.exception.BusinessRuleException;
 import pl.pingpong.club.model.InviteToken;
 import pl.pingpong.club.model.PasswordResetToken;
+import pl.pingpong.club.model.RefreshToken;
 import pl.pingpong.club.model.Role;
 import pl.pingpong.club.model.User;
 import pl.pingpong.club.repository.InviteTokenRepository;
 import pl.pingpong.club.repository.PasswordResetTokenRepository;
+import pl.pingpong.club.repository.RefreshTokenRepository;
 import pl.pingpong.club.repository.UserRepository;
 import pl.pingpong.club.service.EmailService;
 
@@ -29,9 +31,12 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AuthService {
 
+    private static final int REFRESH_TOKEN_DAYS = 30;
+
     private final UserRepository userRepository;
     private final InviteTokenRepository inviteTokenRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
@@ -47,9 +52,22 @@ public class AuthService {
         User user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new BusinessRuleException("Nie znaleziono użytkownika"));
 
-        String token = jwtService.generateToken(user);
-        return new AuthResponse(token, user.getEmail(), user.getRole(),
-                jwtService.extractExpiration(token), user.getFirstName());
+        return buildAuthResponse(user);
+    }
+
+    @Transactional
+    public AuthResponse refresh(String rawRefreshToken) {
+        RefreshToken stored = refreshTokenRepository.findByToken(rawRefreshToken)
+                .orElseThrow(() -> new BusinessRuleException("Nieprawidłowy refresh token"));
+
+        if (stored.getExpiresAt().isBefore(LocalDateTime.now())) {
+            refreshTokenRepository.delete(stored);
+            throw new BusinessRuleException("Refresh token wygasł — zaloguj się ponownie");
+        }
+
+        // Token rotation: delete old, issue new
+        refreshTokenRepository.delete(stored);
+        return buildAuthResponse(stored.getUser());
     }
 
     /** Generuje link zaproszenia dla zawodnika (COACH lub ADMIN wywołuje). */
@@ -146,9 +164,7 @@ public class AuthService {
             }
         }
 
-        String jwtToken = jwtService.generateToken(user);
-        return new AuthResponse(jwtToken, user.getEmail(), user.getRole(),
-                jwtService.extractExpiration(jwtToken), user.getFirstName());
+        return buildAuthResponse(user);
     }
 
     /** Generuje link zaproszenia do przejęcia konta wirtualnego zawodnika. */
@@ -204,6 +220,19 @@ public class AuthService {
             String resetUrl = frontendUrl + "/reset-password?token=" + rawToken;
             emailService.sendPasswordResetEmail(user, resetUrl);
         });
+    }
+
+    private AuthResponse buildAuthResponse(User user) {
+        String jwt = jwtService.generateToken(user);
+        String raw = UUID.randomUUID().toString().replace("-", "");
+        RefreshToken rt = RefreshToken.builder()
+                .user(user)
+                .token(raw)
+                .expiresAt(LocalDateTime.now().plusDays(REFRESH_TOKEN_DAYS))
+                .build();
+        refreshTokenRepository.save(rt);
+        return new AuthResponse(jwt, raw, user.getEmail(), user.getRole(),
+                jwtService.extractExpiration(jwt), user.getFirstName());
     }
 
     @Transactional

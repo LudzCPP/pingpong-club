@@ -11,6 +11,7 @@ import pl.pingpong.club.dto.AuthResponse;
 import pl.pingpong.club.dto.ForgotPasswordRequest;
 import pl.pingpong.club.dto.InviteResponse;
 import pl.pingpong.club.dto.LoginRequest;
+import pl.pingpong.club.dto.RefreshRequest;
 import pl.pingpong.club.dto.RegisterRequest;
 import pl.pingpong.club.dto.ResetPasswordRequest;
 import pl.pingpong.club.service.AuthService;
@@ -48,6 +49,11 @@ public class AuthController {
             @RequestParam String token
     ) {
         return authService.register(request, token);
+    }
+
+    @PostMapping("/refresh")
+    public AuthResponse refresh(@Valid @RequestBody RefreshRequest request) {
+        return authService.refresh(request.refreshToken());
     }
 
     @PostMapping("/forgot-password")

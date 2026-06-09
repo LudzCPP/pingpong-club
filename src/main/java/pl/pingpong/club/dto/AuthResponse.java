@@ -6,6 +6,7 @@ import java.time.Instant;
 
 public record AuthResponse(
         String token,
+        String refreshToken,
         String email,
         Role role,
         Instant expiresAt,
