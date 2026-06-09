@@ -189,9 +189,10 @@ export default function TrainingsPage() {
     setAiError('');
   }
 
+  const searchField = isCoach ? 'playerFullName' : 'coachFullName';
   const visible = trainings
     .filter(t => filter === 'Wszystkie' || t.status === filter)
-    .filter(t => !search.trim() || t.playerFullName?.toLowerCase().includes(search.trim().toLowerCase()));
+    .filter(t => !search.trim() || t[searchField]?.toLowerCase().includes(search.trim().toLowerCase()));
   const scheduled = trainings.filter(t => t.status === 'SCHEDULED').length;
   const completed = trainings.filter(t => t.status === 'COMPLETED').length;
 
@@ -396,7 +397,7 @@ export default function TrainingsPage() {
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
           <input
             type="text"
-            placeholder="Szukaj zawodnika..."
+            placeholder={isCoach ? 'Szukaj zawodnika...' : 'Szukaj trenera...'}
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="w-full bg-surface border border-border rounded-lg pl-8 pr-3 py-1.5 text-sm text-white placeholder-muted focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors"
@@ -428,9 +429,15 @@ export default function TrainingsPage() {
                 <div key={t.id} className="p-4 space-y-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
-                      <Avatar firstName={t.playerFullName?.split(' ')[0]} lastName={t.playerFullName?.split(' ')[1]} size="sm" />
+                      <Avatar
+                        firstName={isCoach ? t.playerFullName?.split(' ')[0] : t.coachFullName?.split(' ')[0]}
+                        lastName={isCoach ? t.playerFullName?.split(' ')[1] : t.coachFullName?.split(' ')[1]}
+                        size="sm"
+                      />
                       <div className="min-w-0">
-                        <p className="text-white font-medium truncate">{t.playerFullName}</p>
+                        <p className="text-white font-medium truncate">
+                          {isCoach ? t.playerFullName : t.coachFullName}
+                        </p>
                         <p className="text-muted text-xs">
                           {new Date(t.scheduledAt).toLocaleString('pl-PL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                           {' · '}{t.durationMinutes} min
@@ -479,7 +486,7 @@ export default function TrainingsPage() {
             <table className="w-full text-sm hidden sm:table">
               <thead>
                 <tr className="border-b border-border">
-                  <th className="text-left px-4 py-3 text-xs text-muted uppercase tracking-wide">Zawodnik</th>
+                  <th className="text-left px-4 py-3 text-xs text-muted uppercase tracking-wide">{isCoach ? 'Zawodnik' : 'Trener'}</th>
                   <th className="text-left px-4 py-3 text-xs text-muted uppercase tracking-wide">Data</th>
                   <th className="text-left px-4 py-3 text-xs text-muted uppercase tracking-wide">Czas</th>
                   <th className="text-left px-4 py-3 text-xs text-muted uppercase tracking-wide">Kwota</th>
@@ -492,9 +499,13 @@ export default function TrainingsPage() {
                   <tr key={t.id} className="border-b border-border/50 hover:bg-white/5 transition-colors last:border-0">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
-                        <Avatar firstName={t.playerFullName?.split(' ')[0]} lastName={t.playerFullName?.split(' ')[1]} size="sm" />
+                        <Avatar
+                          firstName={isCoach ? t.playerFullName?.split(' ')[0] : t.coachFullName?.split(' ')[0]}
+                          lastName={isCoach ? t.playerFullName?.split(' ')[1] : t.coachFullName?.split(' ')[1]}
+                          size="sm"
+                        />
                         <div>
-                          <p className="text-white font-medium">{t.playerFullName}</p>
+                          <p className="text-white font-medium">{isCoach ? t.playerFullName : t.coachFullName}</p>
                           <p className="text-muted text-xs">{t.name}</p>
                         </div>
                       </div>
