@@ -1,0 +1,1 @@
+ALTER TABLE trainings ADD COLUMN location VARCHAR(200);

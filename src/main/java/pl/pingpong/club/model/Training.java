@@ -54,6 +54,9 @@ public class Training {
     @Column(length = 500)
     private String notes;
 
+    @Column(length = 200)
+    private String location;
+
     @Column(nullable = false)
     @Builder.Default
     private boolean paid = false;
