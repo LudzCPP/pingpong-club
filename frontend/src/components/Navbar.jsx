@@ -71,7 +71,7 @@ export default function Navbar() {
           <div className="bg-accent/10 border border-accent/25 p-1.5 rounded-lg">
             <Target size={16} className="text-accent" />
           </div>
-          <span className="font-bold text-base tracking-tight">
+          <span className="font-bold text-[1rem] tracking-tight">
             <span className="text-accent">TT</span><span className="text-white">Manager</span>
           </span>
         </Link>
