@@ -21,7 +21,7 @@ function formatForDatetimeInput(isoString) {
 
 export default function TrainingsPage() {
   const { user } = useAuth();
-  const isCoach = user?.role === 'COACH';
+  const isCoach = user?.role === 'COACH' || user?.role === 'ADMIN';
 
   const [trainings, setTrainings] = useState([]);
   const [players, setPlayers] = useState([]);

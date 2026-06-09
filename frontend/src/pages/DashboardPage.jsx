@@ -30,7 +30,7 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const isAdmin = user?.role === 'ADMIN';
-  const isCoach = user?.role === 'COACH';
+  const isCoach = user?.role === 'COACH' || user?.role === 'ADMIN';
 
   useEffect(() => {
     if (isAdmin) navigate('/admin/dashboard', { replace: true });

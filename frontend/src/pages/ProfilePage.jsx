@@ -14,7 +14,7 @@ const inputCls = 'w-full bg-base border border-border rounded-lg px-3 py-2.5 tex
 
 export default function ProfilePage() {
   const { user: authUser, updateUser } = useAuth();
-  const isCoach = authUser?.role === 'COACH';
+  const isCoach = authUser?.role === 'COACH' || authUser?.role === 'ADMIN';
 
   const [profile, setProfile] = useState(null);
   const [players, setPlayers] = useState([]);

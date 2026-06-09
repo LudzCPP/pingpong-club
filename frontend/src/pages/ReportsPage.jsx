@@ -57,7 +57,7 @@ const inputCls = 'bg-base border border-border rounded-lg px-3 py-2 text-white t
 
 export default function ReportsPage() {
   const { user } = useAuth();
-  const isCoach = user?.role === 'COACH';
+  const isCoach = user?.role === 'COACH' || user?.role === 'ADMIN';
 
   const [trainings, setTrainings] = useState([]);
   const [matches, setMatches] = useState([]);
