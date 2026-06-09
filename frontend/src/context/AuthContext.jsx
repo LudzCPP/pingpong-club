@@ -12,8 +12,8 @@ export function AuthProvider({ children }) {
   async function login(email, password) {
     const { data } = await client.post('/auth/login', { email, password });
     localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify({ email: data.email, role: data.role }));
-    setUser({ email: data.email, role: data.role });
+    localStorage.setItem('user', JSON.stringify({ email: data.email, role: data.role, firstName: data.firstName }));
+    setUser({ email: data.email, role: data.role, firstName: data.firstName });
   }
 
   function logout() {
