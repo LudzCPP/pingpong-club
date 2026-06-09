@@ -142,7 +142,7 @@ function AddVirtualPlayerModal({ onClose, onCreated }) {
 export default function PlayersPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
-  const isCoach = user?.role === 'COACH';
+  const isCoach = user?.role === 'COACH' || user?.role === 'ADMIN';
 
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);

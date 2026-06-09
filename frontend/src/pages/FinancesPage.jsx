@@ -10,7 +10,7 @@ const labelCls = 'text-xs font-medium text-muted uppercase tracking-wide';
 
 export default function FinancesPage() {
   const { user } = useAuth();
-  const isCoach = user?.role === 'COACH';
+  const isCoach = user?.role === 'COACH' || user?.role === 'ADMIN';
 
   const now = new Date();
   const firstOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
