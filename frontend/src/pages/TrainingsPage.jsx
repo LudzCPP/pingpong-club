@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import Avatar from '../components/Avatar';
 import StatusBadge from '../components/StatusBadge';
 import ConfirmDialog from '../components/ConfirmDialog';
-import { Check, X, Plus, Mic, MicOff, Sparkles, Loader, Banknote, Search, MapPin } from 'lucide-react';
+import { Check, X, Plus, Mic, MicOff, Sparkles, Loader, Banknote, Search, MapPin, ChevronDown } from 'lucide-react';
 
 const FILTERS = ['Wszystkie', 'SCHEDULED', 'COMPLETED', 'CANCELLED'];
 const FILTER_LABEL = { Wszystkie: 'Wszystkie', SCHEDULED: 'Zaplanowane', COMPLETED: 'Zrealizowane', CANCELLED: 'Odwołane' };
@@ -28,6 +28,15 @@ export default function TrainingsPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('Wszystkie');
   const [search, setSearch] = useState('');
+  const [expanded, setExpanded] = useState(new Set());
+
+  function toggleExpand(id) {
+    setExpanded(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
 
   // Manual form
   const [showForm, setShowForm] = useState(false);
@@ -431,63 +440,87 @@ export default function TrainingsPage() {
             {/* Mobile: cards */}
             <div className="sm:hidden divide-y divide-border">
               {visible.map(t => (
-                <div key={t.id} className="p-4 space-y-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <Avatar
-                        firstName={isCoach ? t.playerFullName?.split(' ')[0] : t.coachFullName?.split(' ')[0]}
-                        lastName={isCoach ? t.playerFullName?.split(' ')[1] : t.coachFullName?.split(' ')[1]}
-                        size="sm"
-                      />
-                      <div className="min-w-0">
-                        <p className="text-white font-medium truncate">
-                          {isCoach ? t.playerFullName : t.coachFullName}
-                        </p>
-                        <p className="text-muted text-xs">
-                          {new Date(t.scheduledAt).toLocaleString('pl-PL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                          {' · '}{t.durationMinutes} min
-                        </p>
-                        {t.location && (
-                          <p className="text-muted text-xs flex items-center gap-1 mt-0.5">
-                            <MapPin size={10} className="shrink-0" />{t.location}
+                <div key={t.id} className="divide-y divide-border/50">
+                  {/* Collapsed row */}
+                  <div className="p-4 space-y-2.5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <Avatar
+                          firstName={isCoach ? t.playerFullName?.split(' ')[0] : t.coachFullName?.split(' ')[0]}
+                          lastName={isCoach ? t.playerFullName?.split(' ')[1] : t.coachFullName?.split(' ')[1]}
+                          size="sm"
+                        />
+                        <div className="min-w-0">
+                          <p className="text-white font-medium truncate">
+                            {isCoach ? t.playerFullName : t.coachFullName}
                           </p>
-                        )}
+                          <p className="text-muted text-xs">
+                            {new Date(t.scheduledAt).toLocaleString('pl-PL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                            {' · '}{t.durationMinutes} min
+                          </p>
+                        </div>
                       </div>
+                      <StatusBadge status={t.status} />
                     </div>
-                    <StatusBadge status={t.status} />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-white font-semibold">
-                      {t.totalPrice != null ? `${Number(t.totalPrice).toFixed(0)} zł` : '—'}
-                    </span>
-                    {isCoach && (
-                      <div>
-                        {t.status === 'SCHEDULED' && (
-                          <div className="flex gap-2">
-                            <button onClick={() => setCompleting({ id: t.id, notes: '' })}
-                              className="flex items-center gap-1.5 text-xs font-medium text-green-400 border border-green-500/30 bg-green-500/10 hover:bg-green-500/20 px-2.5 py-1.5 rounded-lg transition-colors">
-                              <Check size={12} /> Zakończ
-                            </button>
-                            <button onClick={() => setConfirmCancel(t.id)}
-                              className="flex items-center gap-1.5 text-xs font-medium text-red-400 border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 px-2.5 py-1.5 rounded-lg transition-colors">
-                              <X size={12} /> Odwołaj
-                            </button>
-                          </div>
-                        )}
-                        {t.status === 'COMPLETED' && (
-                          <button onClick={() => handleTogglePaid(t.id)}
-                            className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-full border transition-colors ${
-                              t.paid
-                                ? 'bg-accent/20 text-accent border-accent/30'
-                                : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
-                            }`}>
-                            <Banknote size={11} />
-                            {t.paid ? 'Zapłacono' : 'Oczekuje'}
-                          </button>
-                        )}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className="text-white font-semibold">
+                          {t.totalPrice != null ? `${Number(t.totalPrice).toFixed(0)} zł` : '—'}
+                        </span>
+                        <button
+                          onClick={() => toggleExpand(t.id)}
+                          className="flex items-center gap-1 text-xs text-muted hover:text-white transition-colors"
+                        >
+                          <ChevronDown size={14} className={`transition-transform ${expanded.has(t.id) ? 'rotate-180' : ''}`} />
+                          {expanded.has(t.id) ? 'Zwiń' : 'Szczegóły'}
+                        </button>
                       </div>
-                    )}
+                      {isCoach && (
+                        <div>
+                          {t.status === 'SCHEDULED' && (
+                            <div className="flex gap-2">
+                              <button onClick={() => setCompleting({ id: t.id, notes: '' })}
+                                className="flex items-center gap-1.5 text-xs font-medium text-green-400 border border-green-500/30 bg-green-500/10 hover:bg-green-500/20 px-2.5 py-1.5 rounded-lg transition-colors">
+                                <Check size={12} /> Zakończ
+                              </button>
+                              <button onClick={() => setConfirmCancel(t.id)}
+                                className="flex items-center gap-1.5 text-xs font-medium text-red-400 border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 px-2.5 py-1.5 rounded-lg transition-colors">
+                                <X size={12} /> Odwołaj
+                              </button>
+                            </div>
+                          )}
+                          {t.status === 'COMPLETED' && (
+                            <button onClick={() => handleTogglePaid(t.id)}
+                              className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-full border transition-colors ${
+                                t.paid
+                                  ? 'bg-accent/20 text-accent border-accent/30'
+                                  : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                              }`}>
+                              <Banknote size={11} />
+                              {t.paid ? 'Zapłacono' : 'Oczekuje'}
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
+                  {/* Expanded details */}
+                  {expanded.has(t.id) && (
+                    <div className="px-4 py-3 bg-base/50 space-y-1.5">
+                      {t.location && (
+                        <p className="text-sm text-muted flex items-center gap-2">
+                          <MapPin size={13} className="text-accent shrink-0" />
+                          {t.location}
+                        </p>
+                      )}
+                      {t.notes && (
+                        <p className="text-sm text-muted italic">"{t.notes}"</p>
+                      )}
+                      {!t.location && !t.notes && (
+                        <p className="text-xs text-muted">Brak dodatkowych informacji</p>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -501,71 +534,88 @@ export default function TrainingsPage() {
                   <th className="text-left px-4 py-3 text-xs text-muted uppercase tracking-wide">Czas</th>
                   <th className="text-left px-4 py-3 text-xs text-muted uppercase tracking-wide">Kwota</th>
                   <th className="text-left px-4 py-3 text-xs text-muted uppercase tracking-wide">Status</th>
-                  {isCoach && <th className="px-4 py-3 text-xs text-muted uppercase tracking-wide">Akcje</th>}
+                  <th className="px-4 py-3 text-xs text-muted uppercase tracking-wide">{isCoach ? 'Akcje' : ''}</th>
                 </tr>
               </thead>
               <tbody>
                 {visible.map(t => (
-                  <tr key={t.id} className="border-b border-border/50 hover:bg-white/5 transition-colors last:border-0">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2.5">
-                        <Avatar
-                          firstName={isCoach ? t.playerFullName?.split(' ')[0] : t.coachFullName?.split(' ')[0]}
-                          lastName={isCoach ? t.playerFullName?.split(' ')[1] : t.coachFullName?.split(' ')[1]}
-                          size="sm"
-                        />
-                        <div>
-                          <p className="text-white font-medium">{isCoach ? t.playerFullName : t.coachFullName}</p>
-                          <p className="text-muted text-xs">{t.name}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <p className="text-muted whitespace-nowrap">
-                        {new Date(t.scheduledAt).toLocaleString('pl-PL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                      </p>
-                      {t.location && (
-                        <p className="text-muted text-xs flex items-center gap-1 mt-0.5">
-                          <MapPin size={10} className="shrink-0" />{t.location}
-                        </p>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-muted">{t.durationMinutes} min</td>
-                    <td className="px-4 py-3 text-white font-semibold">
-                      {t.totalPrice != null ? `${Number(t.totalPrice).toFixed(0)} zł` : '—'}
-                    </td>
-                    <td className="px-4 py-3"><StatusBadge status={t.status} /></td>
-                    {isCoach && (
+                  <>
+                    <tr key={t.id} className={`border-b transition-colors cursor-pointer ${expanded.has(t.id) ? 'bg-white/5 border-border/30' : 'border-border/50 hover:bg-white/5'}`}
+                      onClick={() => toggleExpand(t.id)}>
                       <td className="px-4 py-3">
-                        {t.status === 'SCHEDULED' && (
-                          <div className="flex gap-1">
-                            <button onClick={() => setCompleting({ id: t.id, notes: '' })} title="Zakończ"
-                              className="text-green-400 hover:bg-green-400/10 p-1.5 rounded transition-colors">
-                              <Check size={14} />
-                            </button>
-                            <button onClick={() => setConfirmCancel(t.id)} title="Odwołaj"
-                              className="text-red-400 hover:bg-red-400/10 p-1.5 rounded transition-colors">
-                              <X size={14} />
-                            </button>
+                        <div className="flex items-center gap-2.5">
+                          <Avatar
+                            firstName={isCoach ? t.playerFullName?.split(' ')[0] : t.coachFullName?.split(' ')[0]}
+                            lastName={isCoach ? t.playerFullName?.split(' ')[1] : t.coachFullName?.split(' ')[1]}
+                            size="sm"
+                          />
+                          <div>
+                            <p className="text-white font-medium">{isCoach ? t.playerFullName : t.coachFullName}</p>
+                            <p className="text-muted text-xs">{t.name}</p>
                           </div>
-                        )}
-                        {t.status === 'COMPLETED' && (
-                          <button
-                            onClick={() => handleTogglePaid(t.id)}
-                            title={t.paid ? 'Oznacz jako niezapłacone' : 'Oznacz jako zapłacone'}
-                            className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border transition-colors ${
-                              t.paid
-                                ? 'bg-accent/20 text-accent border-accent/30 hover:bg-accent/10'
-                                : 'bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20'
-                            }`}
-                          >
-                            <Banknote size={11} />
-                            {t.paid ? 'Zapłacono' : 'Oczekuje'}
-                          </button>
-                        )}
+                        </div>
                       </td>
+                      <td className="px-4 py-3 text-muted whitespace-nowrap">
+                        {new Date(t.scheduledAt).toLocaleString('pl-PL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      </td>
+                      <td className="px-4 py-3 text-muted">{t.durationMinutes} min</td>
+                      <td className="px-4 py-3 text-white font-semibold">
+                        {t.totalPrice != null ? `${Number(t.totalPrice).toFixed(0)} zł` : '—'}
+                      </td>
+                      <td className="px-4 py-3"><StatusBadge status={t.status} /></td>
+                      <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center gap-1">
+                          {isCoach && t.status === 'SCHEDULED' && (
+                            <>
+                              <button onClick={() => setCompleting({ id: t.id, notes: '' })} title="Zakończ"
+                                className="text-green-400 hover:bg-green-400/10 p-1.5 rounded transition-colors">
+                                <Check size={14} />
+                              </button>
+                              <button onClick={() => setConfirmCancel(t.id)} title="Odwołaj"
+                                className="text-red-400 hover:bg-red-400/10 p-1.5 rounded transition-colors">
+                                <X size={14} />
+                              </button>
+                            </>
+                          )}
+                          {isCoach && t.status === 'COMPLETED' && (
+                            <button
+                              onClick={() => handleTogglePaid(t.id)}
+                              title={t.paid ? 'Oznacz jako niezapłacone' : 'Oznacz jako zapłacone'}
+                              className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border transition-colors ${
+                                t.paid
+                                  ? 'bg-accent/20 text-accent border-accent/30 hover:bg-accent/10'
+                                  : 'bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20'
+                              }`}
+                            >
+                              <Banknote size={11} />
+                              {t.paid ? 'Zapłacono' : 'Oczekuje'}
+                            </button>
+                          )}
+                          <ChevronDown size={14} className={`text-muted ml-auto transition-transform ${expanded.has(t.id) ? 'rotate-180' : ''}`} />
+                        </div>
+                      </td>
+                    </tr>
+                    {expanded.has(t.id) && (
+                      <tr key={`${t.id}-detail`} className="border-b border-border/30 bg-base/60">
+                        <td colSpan={6} className="px-6 py-3">
+                          <div className="flex flex-wrap gap-x-6 gap-y-1.5 text-sm">
+                            {t.location && (
+                              <span className="flex items-center gap-1.5 text-muted">
+                                <MapPin size={13} className="text-accent shrink-0" />
+                                {t.location}
+                              </span>
+                            )}
+                            {t.notes && (
+                              <span className="text-muted italic">"{t.notes}"</span>
+                            )}
+                            {!t.location && !t.notes && (
+                              <span className="text-muted text-xs">Brak dodatkowych informacji</span>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
                     )}
-                  </tr>
+                  </>
                 ))}
               </tbody>
             </table>
