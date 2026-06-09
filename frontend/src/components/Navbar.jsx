@@ -58,9 +58,13 @@ export default function Navbar() {
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
 
         {/* Logo */}
-        <Link to={dashboardTo} className="text-white font-bold text-lg flex items-center gap-2 shrink-0">
-          <Target size={18} className="text-accent" />
-          <span className="hidden xs:inline">TTManager</span>
+        <Link to={dashboardTo} className="flex items-center gap-2 shrink-0">
+          <div className="bg-accent/10 border border-accent/25 p-1.5 rounded-lg">
+            <Target size={16} className="text-accent" />
+          </div>
+          <span className="font-bold text-base tracking-tight">
+            <span className="text-accent">TT</span><span className="text-white">Manager</span>
+          </span>
         </Link>
 
         {/* Desktop links */}

@@ -94,7 +94,7 @@ export default function DashboardPage() {
       <div className="bg-surface border border-border rounded-2xl px-6 py-5 flex items-center justify-between">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-white">Dzień dobry, {firstName}</h1>
-          <p className="text-muted mt-1 capitalize text-sm sm:text-base">{todayPolish()}</p>
+          <p className="text-slate-300 mt-1 capitalize text-sm sm:text-base">{todayPolish()}</p>
         </div>
         {isCoach && (
           <button

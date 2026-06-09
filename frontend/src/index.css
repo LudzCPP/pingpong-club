@@ -6,6 +6,7 @@
   --color-border:  #334155;
   --color-accent:  #22c55e;
   --color-muted:   #94a3b8;
+  --breakpoint-xs: 480px;
 }
 
 * { box-sizing: border-box; }
