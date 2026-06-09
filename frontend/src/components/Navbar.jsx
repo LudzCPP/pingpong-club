@@ -117,10 +117,13 @@ export default function Navbar() {
           </span>
           <button
             onClick={() => setMenuOpen(o => !o)}
-            className="text-muted hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+            className="relative text-muted hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-colors"
             aria-label="Otwórz menu"
           >
             {menuOpen ? <X size={20} /> : <Menu size={20} />}
+            {pendingCount > 0 && !menuOpen && (
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+            )}
           </button>
         </div>
       </div>
