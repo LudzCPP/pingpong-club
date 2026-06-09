@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { useAuth } from './context/AuthContext';
@@ -33,23 +33,17 @@ function Layout({ children }) {
 function OnboardingGate() {
   const { user } = useAuth();
   const location = useLocation();
-  const [show, setShow] = useState(false);
-
-  useEffect(() => {
-    if (!user) return;
-    const key = `onboarded_${user.email}`;
-    if (!localStorage.getItem(key)) {
-      setShow(true);
-    }
-  }, [user]);
+  const [dismissed, setDismissed] = useState(false);
 
   const publicPaths = ['/login', '/register', '/forgot-password', '/reset-password'];
   if (!user || publicPaths.some(p => location.pathname.startsWith(p))) return null;
-  if (!show) return null;
+
+  const key = `onboarded_${user.email}`;
+  if (dismissed || localStorage.getItem(key)) return null;
 
   function handleClose() {
-    localStorage.setItem(`onboarded_${user.email}`, '1');
-    setShow(false);
+    localStorage.setItem(key, '1');
+    setDismissed(true);
   }
 
   return <OnboardingModal role={user.role} onClose={handleClose} />;
