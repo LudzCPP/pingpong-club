@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import Avatar from '../components/Avatar';
 import StatusBadge from '../components/StatusBadge';
 import ConfirmDialog from '../components/ConfirmDialog';
-import { Check, X, Plus, Mic, MicOff, Sparkles, Loader, Banknote } from 'lucide-react';
+import { Check, X, Plus, Mic, MicOff, Sparkles, Loader, Banknote, Search } from 'lucide-react';
 
 const FILTERS = ['Wszystkie', 'SCHEDULED', 'COMPLETED', 'CANCELLED'];
 const FILTER_LABEL = { Wszystkie: 'Wszystkie', SCHEDULED: 'Zaplanowane', COMPLETED: 'Zrealizowane', CANCELLED: 'Odwołane' };
@@ -27,6 +27,7 @@ export default function TrainingsPage() {
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('Wszystkie');
+  const [search, setSearch] = useState('');
 
   // Manual form
   const [showForm, setShowForm] = useState(false);
@@ -188,7 +189,9 @@ export default function TrainingsPage() {
     setAiError('');
   }
 
-  const visible = filter === 'Wszystkie' ? trainings : trainings.filter(t => t.status === filter);
+  const visible = trainings
+    .filter(t => filter === 'Wszystkie' || t.status === filter)
+    .filter(t => !search.trim() || t.playerFullName?.toLowerCase().includes(search.trim().toLowerCase()));
   const scheduled = trainings.filter(t => t.status === 'SCHEDULED').length;
   const completed = trainings.filter(t => t.status === 'COMPLETED').length;
 
@@ -388,17 +391,29 @@ export default function TrainingsPage() {
       )}
 
       {/* Filter bar */}
-      <div className="flex gap-2 flex-wrap">
-        {FILTERS.map(f => (
-          <button key={f} onClick={() => setFilter(f)}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-              filter === f
-                ? 'bg-accent text-white'
-                : 'bg-surface border border-border text-muted hover:text-white'
-            }`}>
-            {FILTER_LABEL[f]}
-          </button>
-        ))}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1 max-w-xs">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Szukaj zawodnika..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full bg-surface border border-border rounded-lg pl-8 pr-3 py-1.5 text-sm text-white placeholder-muted focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors"
+          />
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          {FILTERS.map(f => (
+            <button key={f} onClick={() => setFilter(f)}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                filter === f
+                  ? 'bg-accent text-white'
+                  : 'bg-surface border border-border text-muted hover:text-white'
+              }`}>
+              {FILTER_LABEL[f]}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Trainings list */}
