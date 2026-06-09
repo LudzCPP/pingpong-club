@@ -70,6 +70,22 @@ export default function CalendarPage() {
   const isCurrentMonth = year === now.getFullYear() && month === now.getMonth();
   const todayNum = isCurrentMonth ? now.getDate() : null;
 
+  const monthScheduled = useMemo(() => {
+    const prefix = `${year}-${String(month + 1).padStart(2, '0')}-`;
+    return Object.entries(byDate)
+      .filter(([d]) => d.startsWith(prefix))
+      .flatMap(([, ts]) => ts)
+      .filter(t => t.status === 'SCHEDULED').length;
+  }, [byDate, year, month]);
+
+  const monthCompleted = useMemo(() => {
+    const prefix = `${year}-${String(month + 1).padStart(2, '0')}-`;
+    return Object.entries(byDate)
+      .filter(([d]) => d.startsWith(prefix))
+      .flatMap(([, ts]) => ts)
+      .filter(t => t.status === 'COMPLETED').length;
+  }, [byDate, year, month]);
+
   const selectedKey = selectedDay ? dateKey(year, month, selectedDay) : null;
   const selectedTrainings = selectedKey
     ? (byDate[selectedKey] ?? []).sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt))
@@ -172,11 +188,15 @@ export default function CalendarPage() {
         {/* Legend */}
         <div className="px-6 py-3 border-t border-border flex items-center gap-5">
           <span className="text-xs text-muted flex items-center gap-1.5">
-            <span className="w-4 h-4 rounded bg-blue-500/20 text-blue-300 text-xs flex items-center justify-center font-medium">1</span>
+            <span className="min-w-[18px] h-[18px] rounded bg-blue-500/20 text-blue-300 text-xs flex items-center justify-center font-medium px-1">
+              {monthScheduled}
+            </span>
             Zaplanowane
           </span>
           <span className="text-xs text-muted flex items-center gap-1.5">
-            <span className="w-4 h-4 rounded bg-accent/20 text-accent text-xs flex items-center justify-center font-medium">1</span>
+            <span className="min-w-[18px] h-[18px] rounded bg-accent/20 text-accent text-xs flex items-center justify-center font-medium px-1">
+              {monthCompleted}
+            </span>
             Zrealizowane
           </span>
         </div>
