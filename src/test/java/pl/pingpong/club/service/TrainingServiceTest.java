@@ -264,7 +264,7 @@ class TrainingServiceTest {
                 LocalDateTime.now().plusDays(1),
                 60,
                 BigDecimal.valueOf(100),
-                null
+                null, null
         );
     }
 

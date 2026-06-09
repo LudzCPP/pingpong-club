@@ -172,7 +172,7 @@ class IntegrationTest {
     @Test @Order(9)
     void createTraining_asCoach_returns201WithCorrectName() {
         var body = new TrainingRequest(playerId, LocalDateTime.now().plusDays(1),
-                60, new BigDecimal("120.00"), null);
+                60, new BigDecimal("120.00"), null, null);
 
         var response = rest.exchange(url("/trainings"), POST,
                 bearer(body, coachToken), TrainingResponse.class);
@@ -186,7 +186,7 @@ class IntegrationTest {
     @Test @Order(10)
     void createTraining_asPlayer_returns403() {
         var body = new TrainingRequest(playerId, LocalDateTime.now().plusDays(3),
-                60, new BigDecimal("100.00"), null);
+                60, new BigDecimal("100.00"), null, null);
 
         var response = rest.exchange(url("/trainings"), POST,
                 bearer(body, playerToken), Object.class);
@@ -197,7 +197,7 @@ class IntegrationTest {
     @Test @Order(11)
     void createSecondTraining_forCancelTest() {
         var body = new TrainingRequest(playerId, LocalDateTime.now().plusDays(2),
-                45, new BigDecimal("90.00"), null);
+                45, new BigDecimal("90.00"), null, null);
 
         var response = rest.exchange(url("/trainings"), POST,
                 bearer(body, coachToken), TrainingResponse.class);
