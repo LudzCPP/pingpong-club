@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import client from '../api/client';
 import { Target, LogOut, Menu, X } from 'lucide-react';
 
 export default function Navbar() {
@@ -11,8 +12,16 @@ export default function Navbar() {
   const isCoach = user?.role === 'COACH' || isAdmin;
   const isPlayer = user?.role === 'PLAYER';
   const [menuOpen, setMenuOpen] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
 
   useEffect(() => { setMenuOpen(false); }, [location.pathname]);
+
+  useEffect(() => {
+    if (!isPlayer) return;
+    client.get('/join-requests/pending')
+      .then(r => setPendingCount(r.data.length))
+      .catch(() => {});
+  }, [location.pathname, isPlayer]);
 
   function handleLogout() {
     logout();
@@ -20,12 +29,12 @@ export default function Navbar() {
   }
 
   const desktopLinkCls = ({ isActive }) =>
-    `text-sm font-medium transition-colors pb-0.5 whitespace-nowrap ${
+    `text-sm font-medium transition-colors pb-0.5 whitespace-nowrap inline-flex items-center gap-1.5 ${
       isActive ? 'text-accent border-b-2 border-accent' : 'text-muted hover:text-white'
     }`;
 
   const mobileLinkCls = ({ isActive }) =>
-    `block px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+    `flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
       isActive ? 'bg-accent/20 text-accent' : 'text-muted hover:text-white hover:bg-white/5'
     }`;
 
@@ -46,7 +55,7 @@ export default function Navbar() {
     { to: '/coaches', label: 'Trenerzy', show: isAdmin },
     { to: '/finances', label: 'Finanse', show: isCoach },
     { to: '/reports', label: 'Raporty', show: isCoach },
-    { to: '/invitations', label: 'Zaproszenia', show: isPlayer },
+    { to: '/invitations', label: 'Zaproszenia', show: isPlayer, badge: pendingCount },
     { to: '/profile', label: 'Profil', show: true, mobileOnly: true },
   ];
 
@@ -70,7 +79,14 @@ export default function Navbar() {
         {/* Desktop links */}
         <div className="hidden md:flex items-center gap-5 flex-1 overflow-hidden">
           {desktopLinks.map(l => (
-            <NavLink key={l.to} to={l.to} className={desktopLinkCls}>{l.label}</NavLink>
+            <NavLink key={l.to} to={l.to} className={desktopLinkCls}>
+              {l.label}
+              {l.badge > 0 && (
+                <span className="bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-1 leading-none">
+                  {l.badge}
+                </span>
+              )}
+            </NavLink>
           ))}
         </div>
 
@@ -116,6 +132,11 @@ export default function Navbar() {
             {visibleLinks.map(l => (
               <NavLink key={l.to} to={l.to} className={mobileLinkCls}>
                 {l.label}
+                {l.badge > 0 && (
+                  <span className="bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-1 leading-none ml-auto">
+                    {l.badge}
+                  </span>
+                )}
               </NavLink>
             ))}
             <div className="border-t border-border pt-3 mt-3 flex items-center justify-between px-3">
