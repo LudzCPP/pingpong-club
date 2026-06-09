@@ -9,6 +9,8 @@
   --breakpoint-xs: 480px;
 }
 
+:root { color-scheme: dark; }
+
 * { box-sizing: border-box; }
 
 body {
