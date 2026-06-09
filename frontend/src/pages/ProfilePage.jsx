@@ -13,7 +13,7 @@ function todayStr() {
 const inputCls = 'w-full bg-base border border-border rounded-lg px-3 py-2.5 text-white text-sm placeholder-muted focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors';
 
 export default function ProfilePage() {
-  const { user: authUser } = useAuth();
+  const { user: authUser, updateUser } = useAuth();
   const isCoach = authUser?.role === 'COACH';
 
   const [profile, setProfile] = useState(null);
@@ -63,6 +63,7 @@ export default function ProfilePage() {
         lastName: form.lastName.trim(),
       });
       setProfile(data);
+      updateUser({ firstName: data.firstName });
       setEditing(false);
     } catch (err) {
       setSaveError(err.response?.data?.detail || 'Nie udało się zapisać zmian.');
