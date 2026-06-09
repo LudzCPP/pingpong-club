@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import Avatar from '../components/Avatar';
 import StatusBadge from '../components/StatusBadge';
 import ConfirmDialog from '../components/ConfirmDialog';
-import { Check, X, Plus, Mic, MicOff, Sparkles, Loader, Banknote, Search } from 'lucide-react';
+import { Check, X, Plus, Mic, MicOff, Sparkles, Loader, Banknote, Search, MapPin } from 'lucide-react';
 
 const FILTERS = ['Wszystkie', 'SCHEDULED', 'COMPLETED', 'CANCELLED'];
 const FILTER_LABEL = { Wszystkie: 'Wszystkie', SCHEDULED: 'Zaplanowane', COMPLETED: 'Zrealizowane', CANCELLED: 'Odwołane' };
@@ -12,7 +12,7 @@ const FILTER_LABEL = { Wszystkie: 'Wszystkie', SCHEDULED: 'Zaplanowane', COMPLET
 const inputCls = 'bg-base border border-border rounded-lg px-3 py-2 text-white text-sm placeholder-muted focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors w-full';
 const labelCls = 'text-xs font-medium text-muted uppercase tracking-wide';
 
-const EMPTY_FORM = { playerId: '', scheduledAt: '', durationMinutes: 60, totalPrice: '', notes: '' };
+const EMPTY_FORM = { playerId: '', scheduledAt: '', durationMinutes: 60, totalPrice: '', notes: '', location: '' };
 
 function formatForDatetimeInput(isoString) {
   if (!isoString) return '';
@@ -147,6 +147,7 @@ export default function TrainingsPage() {
         durationMinutes: duration,
         totalPrice: total,
         notes: form.notes,
+        location: form.location || null,
       });
       setShowForm(false);
       setShowAiPanel(false);
@@ -374,7 +375,11 @@ export default function TrainingsPage() {
               <label className={labelCls}>Kwota za trening (zł)</label>
               <input type="number" min="0" step="0.01" value={form.totalPrice} onChange={e => setForm({ ...form, totalPrice: e.target.value })} required className={inputCls} />
             </div>
-            <div className="space-y-1.5 sm:col-span-2">
+            <div className="space-y-1.5">
+              <label className={labelCls}>Lokalizacja</label>
+              <input type="text" value={form.location} onChange={e => setForm({ ...form, location: e.target.value })} placeholder="np. Sala A, ul. Sportowa 5 (opcjonalnie)" maxLength={200} className={inputCls} />
+            </div>
+            <div className="space-y-1.5">
               <label className={labelCls}>Notatki</label>
               <input type="text" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="opcjonalnie" className={inputCls} />
             </div>
@@ -442,6 +447,11 @@ export default function TrainingsPage() {
                           {new Date(t.scheduledAt).toLocaleString('pl-PL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                           {' · '}{t.durationMinutes} min
                         </p>
+                        {t.location && (
+                          <p className="text-muted text-xs flex items-center gap-1 mt-0.5">
+                            <MapPin size={10} className="shrink-0" />{t.location}
+                          </p>
+                        )}
                       </div>
                     </div>
                     <StatusBadge status={t.status} />
@@ -510,8 +520,15 @@ export default function TrainingsPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-muted whitespace-nowrap">
-                      {new Date(t.scheduledAt).toLocaleString('pl-PL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    <td className="px-4 py-3">
+                      <p className="text-muted whitespace-nowrap">
+                        {new Date(t.scheduledAt).toLocaleString('pl-PL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                      {t.location && (
+                        <p className="text-muted text-xs flex items-center gap-1 mt-0.5">
+                          <MapPin size={10} className="shrink-0" />{t.location}
+                        </p>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-muted">{t.durationMinutes} min</td>
                     <td className="px-4 py-3 text-white font-semibold">

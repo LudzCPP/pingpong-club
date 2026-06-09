@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import client from '../api/client';
 import StatusBadge from '../components/StatusBadge';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MapPin } from 'lucide-react';
 
 const DAYS_SHORT = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Ndz'];
 const MONTHS_PL = [
@@ -233,6 +233,11 @@ export default function CalendarPage() {
                   <div className="flex-1 min-w-0">
                     <p className="text-white font-medium">{t.name}</p>
                     <p className="text-muted text-sm">{t.playerFullName}</p>
+                    {t.location && (
+                      <p className="text-muted text-xs flex items-center gap-1 mt-0.5">
+                        <MapPin size={10} className="shrink-0" />{t.location}
+                      </p>
+                    )}
                     {t.notes && (
                       <p className="text-muted text-xs mt-1 italic">"{t.notes}"</p>
                     )}

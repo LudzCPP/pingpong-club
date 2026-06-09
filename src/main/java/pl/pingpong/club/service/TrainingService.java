@@ -49,6 +49,7 @@ public class TrainingService {
                 .durationMinutes(request.durationMinutes())
                 .totalPrice(request.totalPrice())
                 .notes(request.notes())
+                .location(request.location())
                 .build();
 
         Training saved = trainingRepository.save(training);
@@ -86,6 +87,7 @@ public class TrainingService {
         training.setDurationMinutes(request.durationMinutes());
         training.setTotalPrice(request.totalPrice());
         training.setNotes(request.notes());
+        training.setLocation(request.location());
 
         return trainingMapper.toResponse(trainingRepository.save(training));
     }

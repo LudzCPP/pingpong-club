@@ -18,5 +18,6 @@ public record TrainingResponse(
         TrainingStatus status,
         BigDecimal totalPrice,
         String notes,
+        String location,
         boolean paid
 ) {}

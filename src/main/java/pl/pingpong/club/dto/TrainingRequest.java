@@ -15,5 +15,7 @@ public record TrainingRequest(
 
         @NotNull @DecimalMin("0.00") @Digits(integer = 6, fraction = 2) BigDecimal totalPrice,
 
-        @Size(max = 500) String notes
+        @Size(max = 500) String notes,
+
+        @Size(max = 200) String location
 ) {}
