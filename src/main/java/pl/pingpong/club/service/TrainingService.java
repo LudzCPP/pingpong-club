@@ -17,6 +17,7 @@ import pl.pingpong.club.repository.TrainingRepository;
 import pl.pingpong.club.repository.UserRepository;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -33,28 +34,37 @@ public class TrainingService {
     // ------------------------------------------------------------------ ZAPIS
 
     @Transactional
-    public TrainingResponse createTraining(TrainingRequest request, String coachEmail) {
+    public List<TrainingResponse> createTraining(TrainingRequest request, String coachEmail) {
         User coach = findByEmail(coachEmail);
         User player = findPlayerById(request.playerId(), coach);
 
-        LocalDateTime end = request.scheduledAt().plusMinutes(request.durationMinutes());
-        assertNoCoachConflict(coach.getId(), request.scheduledAt(), end);
+        int weeks = (request.recurrenceWeeks() != null) ? request.recurrenceWeeks() : 1;
+        UUID groupId = (weeks > 1) ? UUID.randomUUID() : null;
 
-        Training training = Training.builder()
-                // Bezwzględna reguła: nazwa zawsze "trening [Imię]"
-                .name("trening " + player.getFirstName())
-                .player(player)
-                .coach(coach)
-                .scheduledAt(request.scheduledAt())
-                .durationMinutes(request.durationMinutes())
-                .totalPrice(request.totalPrice())
-                .notes(request.notes())
-                .location(request.location())
-                .build();
+        List<Training> created = new ArrayList<>(weeks);
+        for (int i = 0; i < weeks; i++) {
+            LocalDateTime scheduledAt = request.scheduledAt().plusWeeks(i);
+            LocalDateTime end = scheduledAt.plusMinutes(request.durationMinutes());
+            if (trainingRepository.existsConflictForCoach(coach.getId(), scheduledAt, end)) {
+                throw new BusinessRuleException(
+                        "Trener ma już zaplanowany trening w tym czasie: " + scheduledAt + " – " + end);
+            }
+            Training training = Training.builder()
+                    .name("trening " + player.getFirstName())
+                    .player(player)
+                    .coach(coach)
+                    .scheduledAt(scheduledAt)
+                    .durationMinutes(request.durationMinutes())
+                    .totalPrice(request.totalPrice())
+                    .notes(request.notes())
+                    .location(request.location())
+                    .recurringGroupId(groupId)
+                    .build();
+            created.add(trainingRepository.save(training));
+        }
 
-        Training saved = trainingRepository.save(training);
-        emailService.sendTrainingConfirmation(saved);
-        return trainingMapper.toResponse(saved);
+        emailService.sendTrainingConfirmation(created.get(0));
+        return created.stream().map(trainingMapper::toResponse).toList();
     }
 
     @Transactional
@@ -98,6 +108,18 @@ public class TrainingService {
         assertEditable(training);
         training.setStatus(TrainingStatus.CANCELLED);
         return trainingMapper.toResponse(trainingRepository.save(training));
+    }
+
+    @Transactional
+    public void cancelTrainingGroup(UUID groupId) {
+        List<Training> group = trainingRepository.findAllByRecurringGroupIdOrderByScheduledAt(groupId);
+        if (group.isEmpty()) {
+            throw new ResourceNotFoundException("Nie znaleziono cyklu treningów o ID: " + groupId);
+        }
+        group.stream()
+                .filter(t -> t.getStatus() == TrainingStatus.SCHEDULED)
+                .forEach(t -> t.setStatus(TrainingStatus.CANCELLED));
+        trainingRepository.saveAll(group);
     }
 
     @Transactional

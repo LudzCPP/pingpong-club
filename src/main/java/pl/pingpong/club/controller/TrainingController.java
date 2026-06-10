@@ -50,12 +50,13 @@ public class TrainingController {
     /**
      * POST /api/trainings
      * Tylko COACH. Nazwa "trening [Imię]" generowana automatycznie.
+     * Gdy recurrenceWeeks podane (2–12), tworzy serię cotygodniową i zwraca listę.
      */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasRole('COACH')")
-    public TrainingResponse createTraining(@Valid @RequestBody TrainingRequest request,
-                                           @AuthenticationPrincipal UserDetails user) {
+    public List<TrainingResponse> createTraining(@Valid @RequestBody TrainingRequest request,
+                                                 @AuthenticationPrincipal UserDetails user) {
         return trainingService.createTraining(request, user.getUsername());
     }
 
@@ -96,6 +97,17 @@ public class TrainingController {
     @PreAuthorize("hasRole('COACH')")
     public TrainingResponse togglePaid(@PathVariable UUID id) {
         return trainingService.markPaid(id);
+    }
+
+    /**
+     * PATCH /api/trainings/group/{groupId}/cancel
+     * Tylko COACH. Anuluje wszystkie SCHEDULED treningi w danym cyklu.
+     */
+    @PatchMapping("/group/{groupId}/cancel")
+    @PreAuthorize("hasRole('COACH')")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void cancelTrainingGroup(@PathVariable UUID groupId) {
+        trainingService.cancelTrainingGroup(groupId);
     }
 
     /**

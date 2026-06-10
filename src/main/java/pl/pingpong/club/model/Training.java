@@ -60,4 +60,7 @@ public class Training {
     @Column(nullable = false)
     @Builder.Default
     private boolean paid = false;
+
+    @Column
+    private UUID recurringGroupId;
 }

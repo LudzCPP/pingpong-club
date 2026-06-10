@@ -17,5 +17,8 @@ public record TrainingRequest(
 
         @Size(max = 500) String notes,
 
-        @Size(max = 200) String location
+        @Size(max = 200) String location,
+
+        /** Jeśli podane (2–12), tworzy serię cotygodniowych treningów z tym samym recurringGroupId. */
+        @Min(2) @Max(12) Integer recurrenceWeeks
 ) {}

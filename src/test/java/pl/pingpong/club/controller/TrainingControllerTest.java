@@ -73,14 +73,14 @@ class TrainingControllerTest {
     @Test
     @WithMockUser(username = "coach@test.pl", roles = "COACH")
     void createTraining_asCoach_returns201() throws Exception {
-        given(trainingService.createTraining(any(), anyString())).willReturn(sampleResponse());
+        given(trainingService.createTraining(any(), anyString())).willReturn(List.of(sampleResponse()));
 
         mockMvc.perform(post("/trainings")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(validTrainingRequest())))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.name").value("trening Anna"));
+                .andExpect(jsonPath("$[0].name").value("trening Anna"));
     }
 
     @Test
@@ -150,7 +150,7 @@ class TrainingControllerTest {
                 UUID.randomUUID(), "Piotr Trener",
                 LocalDateTime.now().plusDays(1), 60,
                 TrainingStatus.SCHEDULED,
-                BigDecimal.valueOf(100), null, null, false
+                BigDecimal.valueOf(100), null, null, false, null
         );
     }
 
@@ -160,7 +160,7 @@ class TrainingControllerTest {
                 LocalDateTime.of(2030, 1, 1, 10, 0),
                 60,
                 BigDecimal.valueOf(100),
-                null, null
+                null, null, null
         );
     }
 }

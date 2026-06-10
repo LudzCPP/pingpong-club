@@ -49,6 +49,8 @@ public interface TrainingRepository extends JpaRepository<Training, UUID> {
             @Param("end") LocalDateTime end
     );
 
+    List<Training> findAllByRecurringGroupIdOrderByScheduledAt(UUID recurringGroupId);
+
     long countByStatus(TrainingStatus status);
 
     @Query("SELECT COALESCE(SUM(t.totalPrice), 0) FROM Training t WHERE t.status = :status")

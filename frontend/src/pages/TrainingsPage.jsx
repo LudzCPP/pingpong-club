@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import Avatar from '../components/Avatar';
 import StatusBadge from '../components/StatusBadge';
 import ConfirmDialog from '../components/ConfirmDialog';
-import { Check, X, Plus, Mic, MicOff, Sparkles, Loader, Banknote, Search, MapPin, ChevronDown } from 'lucide-react';
+import { Check, X, Plus, Mic, MicOff, Sparkles, Loader, Banknote, Search, MapPin, ChevronDown, RefreshCw } from 'lucide-react';
 
 const FILTERS = ['Wszystkie', 'SCHEDULED', 'COMPLETED', 'CANCELLED'];
 const FILTER_LABEL = { Wszystkie: 'Wszystkie', SCHEDULED: 'Zaplanowane', COMPLETED: 'Zrealizowane', CANCELLED: 'Odwołane' };
@@ -12,7 +12,7 @@ const FILTER_LABEL = { Wszystkie: 'Wszystkie', SCHEDULED: 'Zaplanowane', COMPLET
 const inputCls = 'bg-base border border-border rounded-lg px-3 py-2 text-white text-sm placeholder-muted focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors w-full';
 const labelCls = 'text-xs font-medium text-muted uppercase tracking-wide';
 
-const EMPTY_FORM = { playerId: '', scheduledAt: '', durationMinutes: 60, totalPrice: '', notes: '', location: '' };
+const EMPTY_FORM = { playerId: '', scheduledAt: '', durationMinutes: 60, totalPrice: '', notes: '', location: '', recurring: false, recurrenceWeeks: 4 };
 
 function formatForDatetimeInput(isoString) {
   if (!isoString) return '';
@@ -48,8 +48,8 @@ export default function TrainingsPage() {
   // Complete with notes modal
   const [completing, setCompleting] = useState(null); // { id, notes }
 
-  // Cancel confirm dialog
-  const [confirmCancel, setConfirmCancel] = useState(null); // training id
+  // Cancel confirm dialog — { id, recurringGroupId } lub null
+  const [confirmCancel, setConfirmCancel] = useState(null);
 
   // AI panel
   const [showAiPanel, setShowAiPanel] = useState(false);
@@ -157,6 +157,7 @@ export default function TrainingsPage() {
         totalPrice: total,
         notes: form.notes,
         location: form.location || null,
+        recurrenceWeeks: form.recurring ? Number(form.recurrenceWeeks) : null,
       });
       setShowForm(false);
       setShowAiPanel(false);
@@ -174,8 +175,12 @@ export default function TrainingsPage() {
     await fetchTrainings();
   }
 
-  async function handleCancel(id) {
-    await client.patch(`/trainings/${id}/cancel`);
+  async function handleCancel(cancelGroup = false) {
+    if (cancelGroup && confirmCancel.recurringGroupId) {
+      await client.patch(`/trainings/group/${confirmCancel.recurringGroupId}/cancel`);
+    } else {
+      await client.patch(`/trainings/${confirmCancel.id}/cancel`);
+    }
     setConfirmCancel(null);
     await fetchTrainings();
   }
@@ -211,12 +216,44 @@ export default function TrainingsPage() {
   return (
     <>
     {confirmCancel && (
-      <ConfirmDialog
-        message="Odwołać ten trening? Tej akcji nie można cofnąć."
-        confirmLabel="Odwołaj trening"
-        onConfirm={() => handleCancel(confirmCancel)}
-        onCancel={() => setConfirmCancel(null)}
-      />
+      confirmCancel.recurringGroupId ? (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-surface border border-border rounded-xl p-6 w-full max-w-sm shadow-2xl space-y-4">
+            <div className="flex items-center gap-2">
+              <RefreshCw size={16} className="text-amber-400 shrink-0" />
+              <h3 className="text-white font-semibold">Odwołaj trening z cyklu</h3>
+            </div>
+            <p className="text-sm text-muted">To jest trening cykliczny. Co chcesz odwołać?</p>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => handleCancel(false)}
+                className="w-full text-sm font-medium bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 px-4 py-2.5 rounded-lg transition-colors text-left"
+              >
+                Tylko ten trening
+              </button>
+              <button
+                onClick={() => handleCancel(true)}
+                className="w-full text-sm font-medium bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 px-4 py-2.5 rounded-lg transition-colors text-left"
+              >
+                Wszystkie zaplanowane w tym cyklu
+              </button>
+              <button
+                onClick={() => setConfirmCancel(null)}
+                className="text-sm text-muted hover:text-white px-3 py-2 rounded-lg transition-colors text-center"
+              >
+                Anuluj
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <ConfirmDialog
+          message="Odwołać ten trening? Tej akcji nie można cofnąć."
+          confirmLabel="Odwołaj trening"
+          onConfirm={() => handleCancel(false)}
+          onCancel={() => setConfirmCancel(null)}
+        />
+      )
     )}
     {/* Complete training modal */}
     {completing && (
@@ -392,6 +429,36 @@ export default function TrainingsPage() {
               <label className={labelCls}>Notatki</label>
               <input type="text" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="opcjonalnie" className={inputCls} />
             </div>
+            <div className="sm:col-span-2 space-y-2">
+              <label className="flex items-center gap-2.5 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={form.recurring}
+                  onChange={e => setForm({ ...form, recurring: e.target.checked })}
+                  className="w-4 h-4 accent-accent cursor-pointer"
+                />
+                <span className="flex items-center gap-1.5 text-sm text-muted group-hover:text-white transition-colors">
+                  <RefreshCw size={13} />
+                  Powtarzaj co tydzień (trening cykliczny)
+                </span>
+              </label>
+              {form.recurring && (
+                <div className="flex items-center gap-3 pl-6">
+                  <input
+                    type="number"
+                    min="2"
+                    max="12"
+                    value={form.recurrenceWeeks}
+                    onChange={e => setForm({ ...form, recurrenceWeeks: e.target.value })}
+                    className={`${inputCls} w-20`}
+                  />
+                  <span className="text-sm text-muted">tygodni łącznie</span>
+                  <span className="text-xs text-muted">
+                    (stworzy {form.recurrenceWeeks} treningów co 7 dni)
+                  </span>
+                </div>
+              )}
+            </div>
             {formError && <div className="sm:col-span-2 bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-lg">{formError}</div>}
             <div className="sm:col-span-2 flex gap-3">
               <button type="submit" disabled={saving} className="bg-accent hover:bg-green-600 disabled:opacity-50 text-white font-semibold px-6 py-2 rounded-lg transition-colors text-sm">
@@ -483,7 +550,7 @@ export default function TrainingsPage() {
                                 className="flex items-center gap-1.5 text-xs font-medium text-green-400 border border-green-500/30 bg-green-500/10 hover:bg-green-500/20 px-2.5 py-1.5 rounded-lg transition-colors">
                                 <Check size={12} /> Zakończ
                               </button>
-                              <button onClick={() => setConfirmCancel(t.id)}
+                              <button onClick={() => setConfirmCancel({ id: t.id, recurringGroupId: t.recurringGroupId ?? null })}
                                 className="flex items-center gap-1.5 text-xs font-medium text-red-400 border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 px-2.5 py-1.5 rounded-lg transition-colors">
                                 <X size={12} /> Odwołaj
                               </button>
@@ -550,9 +617,12 @@ export default function TrainingsPage() {
                             size="sm"
                           />
                           <div>
+                          <div className="flex items-center gap-1.5">
                             <p className="text-white font-medium">{isCoach ? t.playerFullName : t.coachFullName}</p>
-                            <p className="text-muted text-xs">{t.name}</p>
+                            {t.recurringGroupId && <RefreshCw size={11} className="text-muted shrink-0" title="Trening cykliczny" />}
                           </div>
+                          <p className="text-muted text-xs">{t.name}</p>
+                        </div>
                         </div>
                       </td>
                       <td className="px-4 py-3 text-muted whitespace-nowrap">
@@ -571,7 +641,7 @@ export default function TrainingsPage() {
                                 className="text-green-400 hover:bg-green-400/10 p-1.5 rounded transition-colors">
                                 <Check size={14} />
                               </button>
-                              <button onClick={() => setConfirmCancel(t.id)} title="Odwołaj"
+                              <button onClick={() => setConfirmCancel({ id: t.id, recurringGroupId: t.recurringGroupId ?? null })} title="Odwołaj"
                                 className="text-red-400 hover:bg-red-400/10 p-1.5 rounded transition-colors">
                                 <X size={14} />
                               </button>
