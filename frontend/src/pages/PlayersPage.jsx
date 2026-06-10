@@ -3,7 +3,7 @@ import client from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import Avatar from '../components/Avatar';
 import ConfirmDialog from '../components/ConfirmDialog';
-import { Link, Copy, Check, UserX, UserMinus, Mail, Send, Ghost, UserPlus, X } from 'lucide-react';
+import { Link, Copy, Check, UserX, UserMinus, Mail, Send, Ghost, UserPlus, X, Package, ChevronDown, ChevronUp, Plus } from 'lucide-react';
 
 const inputCls = 'flex-1 bg-base border border-border rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-accent placeholder-slate-600';
 
@@ -139,6 +139,138 @@ function AddVirtualPlayerModal({ onClose, onCreated }) {
   );
 }
 
+function PackageModal({ player, packages, onClose, onAdded }) {
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ totalSessions: 10, pricePaid: '', notes: '' });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setError('');
+    setSaving(true);
+    try {
+      const { data } = await client.post('/packages', {
+        playerId: player.id,
+        totalSessions: Number(form.totalSessions),
+        pricePaid: Number(form.pricePaid),
+        notes: form.notes || null,
+      });
+      onAdded(data);
+      setShowForm(false);
+      setForm({ totalSessions: 10, pricePaid: '', notes: '' });
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Nie udało się dodać pakietu.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const activePkg = packages.find(p => p.remainingSessions > 0);
+
+  return (
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4">
+      <div className="bg-surface border border-border rounded-2xl p-6 w-full max-w-md shadow-2xl">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Package size={16} className="text-accent" />
+            <h2 className="text-white font-semibold">Pakiety — {player.firstName} {player.lastName}</h2>
+          </div>
+          <button onClick={onClose} className="text-muted hover:text-white transition-colors"><X size={18} /></button>
+        </div>
+
+        {/* Active package summary */}
+        {activePkg ? (
+          <div className="bg-accent/10 border border-accent/30 rounded-lg px-4 py-3 mb-4">
+            <p className="text-xs text-muted uppercase tracking-wide mb-1">Aktywny pakiet</p>
+            <p className="text-white font-semibold text-lg">
+              {activePkg.remainingSessions} <span className="text-muted font-normal text-sm">/ {activePkg.totalSessions} sesji</span>
+            </p>
+            {activePkg.notes && <p className="text-muted text-xs mt-1 italic">{activePkg.notes}</p>}
+          </div>
+        ) : (
+          <div className="bg-base/50 border border-border rounded-lg px-4 py-3 mb-4 text-center">
+            <p className="text-muted text-sm">Brak aktywnego pakietu</p>
+          </div>
+        )}
+
+        {/* History */}
+        {packages.length > 0 && (
+          <div className="mb-4 space-y-2">
+            <p className="text-xs text-muted uppercase tracking-wide">Historia pakietów</p>
+            <div className="space-y-1.5 max-h-40 overflow-y-auto">
+              {packages.map(pkg => (
+                <div key={pkg.id} className="flex items-center justify-between text-sm px-3 py-2 bg-base/40 rounded-lg">
+                  <span className={pkg.remainingSessions > 0 ? 'text-white' : 'text-muted'}>
+                    {pkg.remainingSessions}/{pkg.totalSessions} sesji
+                    {pkg.notes && <span className="text-muted ml-2 text-xs italic">· {pkg.notes}</span>}
+                  </span>
+                  <span className="text-muted text-xs">{Number(pkg.pricePaid).toFixed(0)} zł</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Add package form */}
+        {showForm ? (
+          <form onSubmit={handleSubmit} className="space-y-3 border-t border-border pt-4">
+            <p className="text-xs text-muted uppercase tracking-wide">Nowy pakiet</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs text-muted">Liczba sesji</label>
+                <input
+                  type="number" min="1" max="200" required
+                  value={form.totalSessions}
+                  onChange={e => setForm({ ...form, totalSessions: e.target.value })}
+                  className="w-full bg-base border border-border rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-accent"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted">Kwota (zł)</label>
+                <input
+                  type="number" min="0" step="0.01" required
+                  value={form.pricePaid}
+                  onChange={e => setForm({ ...form, pricePaid: e.target.value })}
+                  className="w-full bg-base border border-border rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-accent"
+                />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted">Notatka (opcjonalnie)</label>
+              <input
+                type="text" maxLength={500}
+                value={form.notes}
+                onChange={e => setForm({ ...form, notes: e.target.value })}
+                placeholder="np. Pakiet wiosenny"
+                className="w-full bg-base border border-border rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-accent placeholder-slate-600"
+              />
+            </div>
+            {error && <p className="text-red-400 text-sm">{error}</p>}
+            <div className="flex gap-3">
+              <button type="submit" disabled={saving}
+                className="flex items-center gap-2 bg-accent hover:bg-green-600 disabled:opacity-50 text-white font-semibold px-4 py-2 rounded-lg text-sm transition-colors">
+                {saving ? 'Zapisywanie...' : 'Dodaj pakiet'}
+              </button>
+              <button type="button" onClick={() => setShowForm(false)}
+                className="text-sm text-muted hover:text-white px-3 py-2 transition-colors">
+                Anuluj
+              </button>
+            </div>
+          </form>
+        ) : (
+          <button
+            onClick={() => setShowForm(true)}
+            className="w-full flex items-center justify-center gap-2 border border-dashed border-border hover:border-accent/50 text-muted hover:text-white rounded-lg py-2.5 text-sm transition-colors"
+          >
+            <Plus size={14} /> Dodaj nowy pakiet
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function PlayersPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
@@ -161,14 +293,34 @@ export default function PlayersPage() {
   const [virtualInvitePlayer, setVirtualInvitePlayer] = useState(null);
   const [inviteSentMsg, setInviteSentMsg] = useState('');
 
+  // packages: { [playerId]: TrainingPackageResponse[] }
+  const [packages, setPackages] = useState({});
+  const [packageModalPlayer, setPackageModalPlayer] = useState(null);
+
   async function fetchPlayers() {
     const { data } = await client.get('/users/players');
     setPlayers(data);
   }
 
+  async function fetchPackages() {
+    if (!isCoach) return;
+    try {
+      const { data } = await client.get('/packages');
+      const grouped = {};
+      data.forEach(pkg => {
+        if (!grouped[pkg.playerId]) grouped[pkg.playerId] = [];
+        grouped[pkg.playerId].push(pkg);
+      });
+      setPackages(grouped);
+    } catch { /* ignore */ }
+  }
+
   useEffect(() => {
     async function load() {
-      try { await fetchPlayers(); } finally { setLoading(false); }
+      try {
+        await fetchPlayers();
+        await fetchPackages();
+      } finally { setLoading(false); }
     }
     load();
   }, []);
@@ -253,6 +405,19 @@ export default function PlayersPage() {
           player={virtualInvitePlayer}
           onClose={() => setVirtualInvitePlayer(null)}
           onSent={email => setInviteSentMsg(`Link do rejestracji wysłany na ${email}`)}
+        />
+      )}
+      {packageModalPlayer && (
+        <PackageModal
+          player={packageModalPlayer}
+          packages={packages[packageModalPlayer.id] ?? []}
+          onClose={() => setPackageModalPlayer(null)}
+          onAdded={pkg => {
+            setPackages(prev => ({
+              ...prev,
+              [pkg.playerId]: [pkg, ...(prev[pkg.playerId] ?? [])],
+            }));
+          }}
         />
       )}
 
@@ -379,6 +544,20 @@ export default function PlayersPage() {
                     }
                   </div>
                 </div>
+                {/* Package badge */}
+                {isCoach && (() => {
+                  const playerPkgs = packages[p.id] ?? [];
+                  const activePkg = playerPkgs.find(pkg => pkg.remainingSessions > 0);
+                  if (!activePkg) return null;
+                  return (
+                    <div className="flex items-center gap-1.5 text-xs bg-accent/10 border border-accent/30 text-accent rounded-lg px-2.5 py-1.5">
+                      <Package size={11} />
+                      <span className="font-semibold">{activePkg.remainingSessions}</span>
+                      <span className="text-accent/70">/ {activePkg.totalSessions} sesji</span>
+                    </div>
+                  );
+                })()}
+
                 <div className="flex items-center justify-between pt-2 border-t border-border">
                   <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${
                     p.virtual
@@ -398,6 +577,16 @@ export default function PlayersPage() {
                       >
                         <Send size={12} />
                         Zaproś
+                      </button>
+                    )}
+                    {isCoach && (
+                      <button
+                        onClick={() => setPackageModalPlayer(p)}
+                        className="flex items-center gap-1.5 text-xs text-muted hover:text-accent transition-colors px-2 py-1"
+                        title="Zarządzaj pakietami"
+                      >
+                        <Package size={12} />
+                        Pakiet
                       </button>
                     )}
                     {isCoach && (

@@ -14,6 +14,7 @@ import pl.pingpong.club.model.Role;
 import pl.pingpong.club.model.Training;
 import pl.pingpong.club.model.TrainingStatus;
 import pl.pingpong.club.model.User;
+import pl.pingpong.club.repository.TrainingPackageRepository;
 import pl.pingpong.club.repository.TrainingRepository;
 import pl.pingpong.club.repository.UserRepository;
 
@@ -25,7 +26,10 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import java.util.Optional;
+
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -36,10 +40,11 @@ import static org.mockito.Mockito.verify;
 @ExtendWith(MockitoExtension.class)
 class TrainingServiceTest {
 
-    @Mock private TrainingRepository trainingRepository;
-    @Mock private UserRepository     userRepository;
-    @Mock private TrainingMapper     trainingMapper;
-    @Mock private EmailService       emailService;
+    @Mock private TrainingRepository        trainingRepository;
+    @Mock private UserRepository            userRepository;
+    @Mock private TrainingMapper            trainingMapper;
+    @Mock private EmailService              emailService;
+    @Mock private TrainingPackageRepository trainingPackageRepository;
 
     @InjectMocks private TrainingService trainingService;
 
@@ -128,6 +133,10 @@ class TrainingServiceTest {
         given(trainingRepository.findById(id)).willReturn(Optional.of(training));
         given(trainingRepository.save(training)).willReturn(training);
         given(trainingMapper.toResponse(training)).willReturn(mock(TrainingResponse.class));
+        given(trainingPackageRepository
+                .findFirstByPlayerIdAndCoachIdAndRemainingSessionsGreaterThanOrderByCreatedAtAsc(
+                        any(), any(), anyInt()))
+                .willReturn(Optional.empty());
 
         trainingService.completeTraining(id, null);
 
