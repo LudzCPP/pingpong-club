@@ -100,7 +100,9 @@ public class AiParseService {
                 Zasady dopasowania:
                 - Dopasowuj zawodników po imieniu, nazwisku lub ich części (z błędami pisowni też)
                 - Daty: "jutro", "pojutrze", "w środę", "za 3 dni" — użyj tabeli dat powyżej
-                - "w wtorek" bez "przyszły/następny" = najbliższy wtorek z tabeli
+                - "w wtorek" lub "najbliższy wtorek" = wiersz "wtorek (najbliższy)" z tabeli
+                - "wtorek za tydzień" lub "następny wtorek" = wiersz "wtorek za tydzień" z tabeli
+                - "za N dni" = data bieżąca + N (policz od "Aktualna data i godzina" powyżej)
                 - Godziny: "o 16" → 16:00, "o piętnastej trzydzieści" → 15:30, "o wpół do czwartej" → 15:30
                 - Czas trwania: "godzina" → 60, "półtorej" → 90, "45 minut" → 45, "pół godziny" → 30
                 - Kwoty (łączna cena treningu): "sto dwadzieścia złotych" → 120, "150 zł" → 150, "stówa" → 100
@@ -127,16 +129,14 @@ public class AiParseService {
         };
 
         StringBuilder sb = new StringBuilder();
-        // jutro i pojutrze
         sb.append("- jutro: ").append(today.plusDays(1).format(fmt)).append("\n");
         sb.append("- pojutrze: ").append(today.plusDays(2).format(fmt)).append("\n");
-        // każdy dzień tygodnia — najbliższe wystąpienie (od jutra)
         for (DayOfWeek dow : order) {
-            LocalDate next = today.with(TemporalAdjusters.nextOrSame(dow));
-            if (!next.isAfter(today)) next = next.plusWeeks(1); // zawsze przyszłość
-            String suffix = next.equals(today) ? " (dziś)" : "";
-            sb.append("- ").append(polishNames.get(dow)).append(": ")
-              .append(next.format(fmt)).append(suffix).append("\n");
+            LocalDate nearest = today.with(TemporalAdjusters.nextOrSame(dow));
+            if (!nearest.isAfter(today)) nearest = nearest.plusWeeks(1);
+            String name = polishNames.get(dow);
+            sb.append("- ").append(name).append(" (najbliższy): ").append(nearest.format(fmt)).append("\n");
+            sb.append("- ").append(name).append(" za tydzień: ").append(nearest.plusWeeks(1).format(fmt)).append("\n");
         }
         return sb.toString().stripTrailing();
     }
