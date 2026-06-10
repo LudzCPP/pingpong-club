@@ -5,6 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -47,13 +48,24 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     );
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
+                } else {
+                    // Token strukturalnie OK ale nieważny (np. wygasły) → 401, żeby axios mógł odświeżyć
+                    sendUnauthorized(response);
+                    return;
                 }
             }
         } catch (Exception ignored) {
-            // Nieprawidłowy token – kontynuujemy bez uwierzytelnienia,
-            // Spring Security odrzuci request jeśli endpoint jest chroniony.
+            // Nie można sparsować tokenu (nieprawidłowy format) → 401
+            sendUnauthorized(response);
+            return;
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private void sendUnauthorized(HttpServletResponse response) throws IOException {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.getWriter().write("{\"status\":401,\"detail\":\"Token wygasł lub jest nieprawidłowy\"}");
     }
 }
