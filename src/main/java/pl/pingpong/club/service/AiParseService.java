@@ -15,8 +15,11 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -62,17 +65,24 @@ public class AiParseService {
     // ── prompt ─────────────────────────────────────────────────────────────────
 
     private String buildPrompt(String text, List<UserResponse> players) {
+        LocalDate today = LocalDate.now();
         String now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
 
         String playerList = players.stream()
                 .map(p -> p.id() + ": " + p.firstName() + " " + p.lastName())
                 .collect(Collectors.joining("\n"));
 
+        // Pre-obliczone daty — LLM nie musi liczyć dni tygodnia sam
+        String calendar = buildDayCalendar(today);
+
         return """
                 Jesteś asystentem systemu zarządzania klubem tenisa stołowego.
                 Trener opisał trening głosowo lub tekstowo po polsku.
 
                 Aktualna data i godzina: %s
+
+                Nadchodzące daty dni tygodnia (użyj DOKŁADNIE tych dat, nie licz sam):
+                %s
 
                 Zawodnicy w systemie (UUID: imię nazwisko):
                 %s
@@ -89,14 +99,46 @@ public class AiParseService {
 
                 Zasady dopasowania:
                 - Dopasowuj zawodników po imieniu, nazwisku lub ich części (z błędami pisowni też)
-                - Daty: "jutro", "pojutrze", "w środę", "za 3 dni" — oblicz względem aktualnej daty
+                - Daty: "jutro", "pojutrze", "w środę", "za 3 dni" — użyj tabeli dat powyżej
+                - "w wtorek" bez "przyszły/następny" = najbliższy wtorek z tabeli
                 - Godziny: "o 16" → 16:00, "o piętnastej trzydzieści" → 15:30, "o wpół do czwartej" → 15:30
                 - Czas trwania: "godzina" → 60, "półtorej" → 90, "45 minut" → 45, "pół godziny" → 30
                 - Kwoty (łączna cena treningu): "sto dwadzieścia złotych" → 120, "150 zł" → 150, "stówa" → 100
                 - Jeśli informacja nie pada w tekście, wstaw null
 
                 Tekst do sparsowania: "%s"
-                """.formatted(now, playerList, text.replace("\"", "\\\""));
+                """.formatted(now, calendar, playerList, text.replace("\"", "\\\""));
+    }
+
+    private String buildDayCalendar(LocalDate today) {
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        Map<DayOfWeek, String> polishNames = Map.of(
+                DayOfWeek.MONDAY,    "poniedziałek",
+                DayOfWeek.TUESDAY,   "wtorek",
+                DayOfWeek.WEDNESDAY, "środa",
+                DayOfWeek.THURSDAY,  "czwartek",
+                DayOfWeek.FRIDAY,    "piątek",
+                DayOfWeek.SATURDAY,  "sobota",
+                DayOfWeek.SUNDAY,    "niedziela"
+        );
+        DayOfWeek[] order = {
+                DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY,
+                DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY, DayOfWeek.SUNDAY
+        };
+
+        StringBuilder sb = new StringBuilder();
+        // jutro i pojutrze
+        sb.append("- jutro: ").append(today.plusDays(1).format(fmt)).append("\n");
+        sb.append("- pojutrze: ").append(today.plusDays(2).format(fmt)).append("\n");
+        // każdy dzień tygodnia — najbliższe wystąpienie (od jutra)
+        for (DayOfWeek dow : order) {
+            LocalDate next = today.with(TemporalAdjusters.nextOrSame(dow));
+            if (!next.isAfter(today)) next = next.plusWeeks(1); // zawsze przyszłość
+            String suffix = next.equals(today) ? " (dziś)" : "";
+            sb.append("- ").append(polishNames.get(dow)).append(": ")
+              .append(next.format(fmt)).append(suffix).append("\n");
+        }
+        return sb.toString().stripTrailing();
     }
 
     // ── HTTP call (OpenAI-compatible format) ────────────────────────────────────
