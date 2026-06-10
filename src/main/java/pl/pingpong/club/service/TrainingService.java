@@ -13,6 +13,7 @@ import pl.pingpong.club.model.Role;
 import pl.pingpong.club.model.Training;
 import pl.pingpong.club.model.TrainingStatus;
 import pl.pingpong.club.model.User;
+import pl.pingpong.club.repository.TrainingPackageRepository;
 import pl.pingpong.club.repository.TrainingRepository;
 import pl.pingpong.club.repository.UserRepository;
 
@@ -26,10 +27,11 @@ import java.util.UUID;
 @Transactional(readOnly = true)
 public class TrainingService {
 
-    private final TrainingRepository trainingRepository;
-    private final UserRepository     userRepository;
-    private final TrainingMapper     trainingMapper;
-    private final EmailService       emailService;
+    private final TrainingRepository        trainingRepository;
+    private final UserRepository            userRepository;
+    private final TrainingMapper            trainingMapper;
+    private final EmailService              emailService;
+    private final TrainingPackageRepository trainingPackageRepository;
 
     // ------------------------------------------------------------------ ZAPIS
 
@@ -132,6 +134,15 @@ public class TrainingService {
         if (request != null && request.notes() != null && !request.notes().isBlank()) {
             training.setNotes(request.notes());
         }
+        // Jeśli gracz ma aktywny pakiet u tego trenera — pobierz sesję i auto-oznacz jako opłacony
+        trainingPackageRepository
+                .findFirstByPlayerIdAndCoachIdAndRemainingSessionsGreaterThanOrderByCreatedAtAsc(
+                        training.getPlayer().getId(), training.getCoach().getId(), 0)
+                .ifPresent(pkg -> {
+                    pkg.setRemainingSessions(pkg.getRemainingSessions() - 1);
+                    trainingPackageRepository.save(pkg);
+                    training.setPaid(true);
+                });
         return trainingMapper.toResponse(trainingRepository.save(training));
     }
 
