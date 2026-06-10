@@ -122,6 +122,33 @@ class TrainingControllerTest {
 
     @Test
     @WithMockUser(username = "coach@test.pl", roles = "COACH")
+    void completeTraining_withEmptyJsonBody_returns200() throws Exception {
+        UUID id = UUID.randomUUID();
+        given(trainingService.completeTraining(eq(id), any())).willReturn(sampleResponse());
+
+        // Reprodukuje zachowanie frontendu gdy notatki są puste: { notes: null }
+        mockMvc.perform(patch("/trainings/{id}/complete", id)
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"notes\":null}"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(username = "coach@test.pl", roles = "COACH")
+    void completeTraining_withEmptyObject_returns200() throws Exception {
+        UUID id = UUID.randomUUID();
+        given(trainingService.completeTraining(eq(id), any())).willReturn(sampleResponse());
+
+        mockMvc.perform(patch("/trainings/{id}/complete", id)
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(username = "coach@test.pl", roles = "COACH")
     void updateTraining_asCoach_returns200() throws Exception {
         UUID id = UUID.randomUUID();
         given(trainingService.updateTraining(any(), any(), anyString())).willReturn(sampleResponse());
