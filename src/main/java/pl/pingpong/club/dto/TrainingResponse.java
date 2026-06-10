@@ -19,5 +19,6 @@ public record TrainingResponse(
         BigDecimal totalPrice,
         String notes,
         String location,
-        boolean paid
+        boolean paid,
+        UUID recurringGroupId
 ) {}

@@ -172,21 +172,21 @@ class IntegrationTest {
     @Test @Order(9)
     void createTraining_asCoach_returns201WithCorrectName() {
         var body = new TrainingRequest(playerId, LocalDateTime.now().plusDays(1),
-                60, new BigDecimal("120.00"), null, null);
+                60, new BigDecimal("120.00"), null, null, null);
 
         var response = rest.exchange(url("/trainings"), POST,
-                bearer(body, coachToken), TrainingResponse.class);
+                bearer(body, coachToken), TrainingResponse[].class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        assertThat(response.getBody().status().name()).isEqualTo("SCHEDULED");
-        assertThat(response.getBody().name()).isEqualTo("trening Marek");
-        trainingId = response.getBody().id();
+        assertThat(response.getBody()[0].status().name()).isEqualTo("SCHEDULED");
+        assertThat(response.getBody()[0].name()).isEqualTo("trening Marek");
+        trainingId = response.getBody()[0].id();
     }
 
     @Test @Order(10)
     void createTraining_asPlayer_returns403() {
         var body = new TrainingRequest(playerId, LocalDateTime.now().plusDays(3),
-                60, new BigDecimal("100.00"), null, null);
+                60, new BigDecimal("100.00"), null, null, null);
 
         var response = rest.exchange(url("/trainings"), POST,
                 bearer(body, playerToken), Object.class);
@@ -197,13 +197,13 @@ class IntegrationTest {
     @Test @Order(11)
     void createSecondTraining_forCancelTest() {
         var body = new TrainingRequest(playerId, LocalDateTime.now().plusDays(2),
-                45, new BigDecimal("90.00"), null, null);
+                45, new BigDecimal("90.00"), null, null, null);
 
         var response = rest.exchange(url("/trainings"), POST,
-                bearer(body, coachToken), TrainingResponse.class);
+                bearer(body, coachToken), TrainingResponse[].class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        trainingToCancel = response.getBody().id();
+        trainingToCancel = response.getBody()[0].id();
     }
 
     @Test @Order(12)
