@@ -170,7 +170,7 @@ export default function TrainingsPage() {
   }
 
   async function handleComplete(id, notes) {
-    await client.patch(`/trainings/${id}/complete`, notes?.trim() ? { notes } : null);
+    await client.patch(`/trainings/${id}/complete`, { notes: notes?.trim() || null });
     setCompleting(null);
     await fetchTrainings();
   }
