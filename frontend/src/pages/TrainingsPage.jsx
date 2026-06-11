@@ -4,10 +4,11 @@ import { useAuth } from '../context/AuthContext';
 import Avatar from '../components/Avatar';
 import StatusBadge from '../components/StatusBadge';
 import ConfirmDialog from '../components/ConfirmDialog';
-import { Check, X, Plus, Mic, MicOff, Sparkles, Loader, Banknote, Search, MapPin, ChevronDown, RefreshCw } from 'lucide-react';
+import { Check, X, Plus, Mic, MicOff, Sparkles, Loader, Banknote, Search, MapPin, ChevronDown, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 
 const FILTERS = ['Wszystkie', 'SCHEDULED', 'COMPLETED', 'CANCELLED'];
 const FILTER_LABEL = { Wszystkie: 'Wszystkie', SCHEDULED: 'Zaplanowane', COMPLETED: 'Zrealizowane', CANCELLED: 'Odwołane' };
+const PAGE_SIZE = 15;
 
 const inputCls = 'bg-base border border-border rounded-lg px-3 py-2 text-white text-sm placeholder-muted focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors w-full';
 const labelCls = 'text-xs font-medium text-muted uppercase tracking-wide';
@@ -29,6 +30,8 @@ export default function TrainingsPage() {
   const [filter, setFilter] = useState('Wszystkie');
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState(new Set());
+  const [page, setPage] = useState(1);
+  const listRef = useRef(null);
 
   function toggleExpand(id) {
     setExpanded(prev => {
@@ -210,6 +213,16 @@ export default function TrainingsPage() {
     .filter(t => !search.trim() || t[searchField]?.toLowerCase().includes(search.trim().toLowerCase()));
   const scheduled = trainings.filter(t => t.status === 'SCHEDULED').length;
   const completed = trainings.filter(t => t.status === 'COMPLETED').length;
+
+  // Client-side pagination over the filtered list
+  const totalPages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const paged = visible.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  function changePage(next) {
+    setPage(next);
+    listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 
   if (loading) return <div className="max-w-6xl mx-auto px-6 py-12 text-center text-muted">Ładowanie...</div>;
 
@@ -480,13 +493,13 @@ export default function TrainingsPage() {
             type="text"
             placeholder={isCoach ? 'Szukaj zawodnika...' : 'Szukaj trenera...'}
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={e => { setSearch(e.target.value); setPage(1); }}
             className="w-full bg-surface border border-border rounded-lg pl-8 pr-3 py-1.5 text-sm text-white placeholder-muted focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors"
           />
         </div>
         <div className="flex gap-2 flex-wrap">
           {FILTERS.map(f => (
-            <button key={f} onClick={() => setFilter(f)}
+            <button key={f} onClick={() => { setFilter(f); setPage(1); }}
               className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
                 filter === f
                   ? 'bg-accent text-white'
@@ -499,14 +512,14 @@ export default function TrainingsPage() {
       </div>
 
       {/* Trainings list */}
-      <div className="bg-surface border border-border rounded-xl overflow-hidden">
+      <div ref={listRef} className="bg-surface border border-border rounded-xl overflow-hidden scroll-mt-20">
         {visible.length === 0 ? (
           <p className="text-center text-muted py-12">Brak treningów</p>
         ) : (
           <>
             {/* Mobile: cards */}
             <div className="sm:hidden divide-y divide-border">
-              {visible.map(t => (
+              {paged.map(t => (
                 <div key={t.id} className="divide-y divide-border/50">
                   {/* Collapsed row */}
                   <div className="p-4 space-y-2.5">
@@ -605,7 +618,7 @@ export default function TrainingsPage() {
                 </tr>
               </thead>
               <tbody>
-                {visible.map(t => (
+                {paged.map(t => (
                   <>
                     <tr key={t.id} className={`border-b transition-colors cursor-pointer ${expanded.has(t.id) ? 'bg-white/5 border-border/30' : 'border-border/50 hover:bg-white/5'}`}
                       onClick={() => toggleExpand(t.id)}>
@@ -692,6 +705,34 @@ export default function TrainingsPage() {
           </>
         )}
       </div>
+
+      {/* Pagination */}
+      {visible.length > PAGE_SIZE && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-xs text-muted">
+            {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, visible.length)} z {visible.length} treningów
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => changePage(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium bg-surface border border-border text-muted hover:text-white hover:border-slate-500 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-muted disabled:hover:border-border transition-colors"
+            >
+              <ChevronLeft size={14} /> Poprzednia
+            </button>
+            <span className="text-sm text-muted px-1 whitespace-nowrap">
+              Strona <span className="text-white font-medium">{currentPage}</span> z {totalPages}
+            </span>
+            <button
+              onClick={() => changePage(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium bg-surface border border-border text-muted hover:text-white hover:border-slate-500 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-muted disabled:hover:border-border transition-colors"
+            >
+              Następna <ChevronRight size={14} />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
     </>
   );
