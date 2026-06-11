@@ -126,6 +126,6 @@ class AuthControllerTest {
     }
 
     private AuthResponse authResponse() {
-        return new AuthResponse("jwt-token", "refresh-token", "test@test.pl", Role.PLAYER, Instant.now().plusSeconds(3600), "Jan");
+        return new AuthResponse("jwt-token", "refresh-token", "test@test.pl", Role.PLAYER, Instant.now().plusSeconds(3600), "Jan", "Kowalski");
     }
 }

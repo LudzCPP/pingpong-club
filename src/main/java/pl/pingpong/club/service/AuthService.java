@@ -232,7 +232,7 @@ public class AuthService {
                 .build();
         refreshTokenRepository.save(rt);
         return new AuthResponse(jwt, raw, user.getEmail(), user.getRole(),
-                jwtService.extractExpiration(jwt), user.getFirstName());
+                jwtService.extractExpiration(jwt), user.getFirstName(), user.getLastName());
     }
 
     @Transactional

@@ -18,6 +18,7 @@ import pl.pingpong.club.model.InviteToken;
 import pl.pingpong.club.model.Role;
 import pl.pingpong.club.model.User;
 import pl.pingpong.club.repository.InviteTokenRepository;
+import pl.pingpong.club.repository.RefreshTokenRepository;
 import pl.pingpong.club.repository.UserRepository;
 
 import java.time.Instant;
@@ -36,6 +37,7 @@ class AuthServiceTest {
 
     @Mock private UserRepository userRepository;
     @Mock private InviteTokenRepository inviteTokenRepository;
+    @Mock private RefreshTokenRepository refreshTokenRepository;
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private JwtService jwtService;
     @Mock private AuthenticationManager authenticationManager;

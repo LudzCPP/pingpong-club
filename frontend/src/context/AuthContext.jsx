@@ -13,8 +13,9 @@ export function AuthProvider({ children }) {
     const { data } = await client.post('/auth/login', { email, password });
     localStorage.setItem('token', data.token);
     localStorage.setItem('refreshToken', data.refreshToken);
-    localStorage.setItem('user', JSON.stringify({ email: data.email, role: data.role, firstName: data.firstName }));
-    setUser({ email: data.email, role: data.role, firstName: data.firstName });
+    const u = { email: data.email, role: data.role, firstName: data.firstName, lastName: data.lastName };
+    localStorage.setItem('user', JSON.stringify(u));
+    setUser(u);
   }
 
   function logout() {
