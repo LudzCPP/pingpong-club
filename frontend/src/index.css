@@ -6,6 +6,11 @@
   --color-border:  #334155;
   --color-accent:  #22c55e;
   --color-muted:   #94a3b8;
+  /* semantic colors */
+  --color-success: #22c55e;
+  --color-danger:  #ef4444;
+  --color-warning: #f59e0b;
+  --color-info:    #3b82f6;
   --breakpoint-xs: 480px;
 }
 
