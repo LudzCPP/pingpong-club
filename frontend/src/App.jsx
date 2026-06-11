@@ -23,10 +23,11 @@ import ProfilePage from './pages/ProfilePage';
 import './index.css';
 
 function Layout({ children }) {
+  const location = useLocation();
   return (
     <>
       <Navbar />
-      <main>{children}</main>
+      <main key={location.pathname} className="animate-[page-in_0.3s_ease-out]">{children}</main>
     </>
   );
 }
