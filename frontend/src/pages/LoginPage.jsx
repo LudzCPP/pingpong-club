@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Target } from 'lucide-react';
+import { Button, Card, Input, Alert } from '../components/ui';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -26,14 +27,12 @@ export default function LoginPage() {
     }
   }
 
-  const inputCls = 'w-full bg-base border border-border rounded-lg px-4 py-2.5 text-white placeholder-muted focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors';
-
   return (
     <div className="min-h-screen bg-base flex items-center justify-center px-4"
          style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, #1e293b 0%, transparent 50%), radial-gradient(circle at 80% 20%, #0f3460 0%, transparent 40%)' }}>
 
       <div className="w-full max-w-md">
-        <div className="bg-surface border border-border rounded-2xl p-8 shadow-2xl">
+        <Card className="rounded-2xl p-8 shadow-2xl">
           <div className="text-center mb-8">
             <div className="w-16 h-16 bg-accent/20 border border-accent/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <Target size={32} className="text-accent" />
@@ -43,60 +42,49 @@ export default function LoginPage() {
           </div>
 
           {location.state?.passwordReset && (
-            <div className="bg-green-500/10 border border-green-500/30 text-green-400 text-sm px-4 py-3 rounded-lg mb-6">
+            <Alert variant="success" className="mb-6">
               Hasło zostało zmienione. Możesz się teraz zalogować.
-            </div>
+            </Alert>
           )}
 
           {location.state?.registered && (
-            <div className="bg-green-500/10 border border-green-500/30 text-green-400 text-sm px-4 py-3 rounded-lg mb-6">
+            <Alert variant="success" className="mb-6">
               Konto zostało utworzone. Możesz się teraz zalogować.
-            </div>
+            </Alert>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-muted">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="trener@pingpong.pl"
-                required
-                autoFocus
-                className={inputCls}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-muted">Hasło</label>
+            <Input
+              label="Email"
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="trener@pingpong.pl"
+              required
+              autoFocus
+            />
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label htmlFor="login-password" className="text-sm font-medium text-muted">Hasło</label>
                 <Link to="/forgot-password" className="text-xs text-muted hover:text-accent transition-colors">
                   Nie pamiętasz hasła?
                 </Link>
               </div>
-              <input
+              <Input
+                id="login-password"
                 type="password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
-                className={inputCls}
               />
             </div>
-            {error && (
-              <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-lg">
-                {error}
-              </div>
-            )}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-accent hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-2.5 rounded-lg transition-colors mt-2"
-            >
+            {error && <Alert variant="danger">{error}</Alert>}
+            <Button type="submit" disabled={loading} className="w-full mt-2">
               {loading ? 'Logowanie...' : 'Zaloguj się'}
-            </button>
+            </Button>
           </form>
-        </div>
+        </Card>
         <p className="text-center text-muted text-xs mt-4">Aplikacja trenera tenisa stołowego</p>
       </div>
     </div>
