@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import client from '../api/client';
+import Avatar from './Avatar';
 import { Target, LogOut, Menu, X } from 'lucide-react';
 
 export default function Navbar() {
@@ -44,6 +45,9 @@ export default function Navbar() {
       ? 'bg-blue-500/20 text-blue-300 border-blue-500/30'
       : 'bg-accent/20 text-accent border-accent/30';
   const roleLabel = isAdmin ? 'Admin' : isPlayer ? 'Zawodnik' : 'Trener';
+
+  const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(' ');
+  const displayName = fullName || user?.email;
 
   const dashboardTo = isAdmin ? '/admin/dashboard' : '/dashboard';
 
@@ -94,12 +98,15 @@ export default function Navbar() {
         <div className="hidden md:flex items-center gap-2 shrink-0">
           <Link
             to="/profile"
-            className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-white/5 transition-colors group"
+            className="flex items-center gap-2.5 pl-1 pr-2 py-1 rounded-lg hover:bg-white/5 transition-colors group"
           >
-            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${roleBadge}`}>
-              {roleLabel}
+            <Avatar firstName={user?.firstName} lastName={user?.lastName} size="sm" />
+            <span className="hidden lg:flex flex-col leading-tight">
+              <span className="text-sm font-medium text-white group-hover:text-accent transition-colors">
+                {displayName}
+              </span>
+              <span className="text-xs text-muted">{roleLabel}</span>
             </span>
-            <span className="text-sm text-muted hidden lg:block group-hover:text-white transition-colors">{user?.email}</span>
           </Link>
           <button
             onClick={handleLogout}
@@ -143,7 +150,13 @@ export default function Navbar() {
               </NavLink>
             ))}
             <div className="border-t border-border pt-3 mt-3 flex items-center justify-between px-3">
-              <span className="text-muted text-sm truncate mr-4">{user?.email}</span>
+              <Link to="/profile" className="flex items-center gap-2.5 min-w-0 mr-4">
+                <Avatar firstName={user?.firstName} lastName={user?.lastName} size="sm" />
+                <span className="flex flex-col leading-tight min-w-0">
+                  <span className="text-white text-sm font-medium truncate">{displayName}</span>
+                  <span className="text-muted text-xs">{roleLabel}</span>
+                </span>
+              </Link>
               <button
                 onClick={handleLogout}
                 className="flex items-center gap-2 text-muted hover:text-white text-sm transition-colors shrink-0"
