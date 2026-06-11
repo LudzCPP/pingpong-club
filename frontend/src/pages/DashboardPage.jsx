@@ -4,7 +4,10 @@ import client from '../api/client';
 import StatCard from '../components/StatCard';
 import StatusBadge from '../components/StatusBadge';
 import Avatar from '../components/Avatar';
+import ConfirmDialog from '../components/ConfirmDialog';
+import { Skeleton, EmptyState } from '../components/ui';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { CalendarCheck, CalendarDays, Banknote, Users, Check, X, ClipboardList } from 'lucide-react';
 
 function todayStr() {
@@ -29,6 +32,7 @@ function todayPolish() {
 export default function DashboardPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const toast = useToast();
   const isAdmin = user?.role === 'ADMIN';
   const isCoach = user?.role === 'COACH' || user?.role === 'ADMIN';
 
@@ -40,6 +44,7 @@ export default function DashboardPage() {
   const [players, setPlayers] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [confirmCancelId, setConfirmCancelId] = useState(null);
 
   useEffect(() => {
     const today = todayStr();
@@ -68,21 +73,40 @@ export default function DashboardPage() {
     .slice(0, 5);
 
   async function handleComplete(id) {
-    await client.patch(`/trainings/${id}/complete`);
-    setTrainings(ts => ts.map(t => t.id === id ? { ...t, status: 'COMPLETED' } : t));
+    try {
+      await client.patch(`/trainings/${id}/complete`);
+      setTrainings(ts => ts.map(t => t.id === id ? { ...t, status: 'COMPLETED' } : t));
+      toast.success('Trening oznaczony jako zakończony');
+    } catch {
+      toast.error('Nie udało się zakończyć treningu');
+    }
   }
   async function handleCancel(id) {
-    if (!confirm('Odwołać trening?')) return;
-    await client.patch(`/trainings/${id}/cancel`);
-    setTrainings(ts => ts.map(t => t.id === id ? { ...t, status: 'CANCELLED' } : t));
+    setConfirmCancelId(null);
+    try {
+      await client.patch(`/trainings/${id}/cancel`);
+      setTrainings(ts => ts.map(t => t.id === id ? { ...t, status: 'CANCELLED' } : t));
+      toast.success('Trening odwołany');
+    } catch {
+      toast.error('Nie udało się odwołać treningu');
+    }
   }
 
   const firstName = isCoach ? 'Trenerze' : (user?.firstName || user?.email?.split('@')[0] || '');
 
   if (loading) {
     return (
-      <div className="max-w-6xl mx-auto px-6 py-12 text-center text-muted">
-        Ładowanie dashboardu...
+      <div className="max-w-6xl mx-auto px-6 py-8 space-y-8">
+        <Skeleton className="h-[88px] rounded-2xl" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-[88px] rounded-xl" />
+          ))}
+        </div>
+        <div className="grid lg:grid-cols-2 gap-6">
+          <Skeleton className="h-64 rounded-xl" />
+          <Skeleton className="h-64 rounded-xl" />
+        </div>
       </div>
     );
   }
@@ -136,7 +160,11 @@ export default function DashboardPage() {
             <span className="text-xs bg-accent/20 text-accent px-2 py-0.5 rounded-full ml-1">{todayTrainings.length}</span>
           </h2>
           {todayTrainings.length === 0 ? (
-            <p className="text-muted text-sm py-4 text-center">Brak treningów na dziś</p>
+            <EmptyState
+              icon={CalendarCheck}
+              title="Brak treningów na dziś"
+              description="Zaplanowane treningi pojawią się tutaj."
+            />
           ) : (
             <ul className="space-y-3">
               {todayTrainings.map(t => (
@@ -154,7 +182,7 @@ export default function DashboardPage() {
                         className="text-green-400 hover:bg-green-400/10 p-1.5 rounded transition-colors">
                         <Check size={14} />
                       </button>
-                      <button onClick={() => handleCancel(t.id)} title="Odwołaj"
+                      <button onClick={() => setConfirmCancelId(t.id)} title="Odwołaj"
                         className="text-red-400 hover:bg-red-400/10 p-1.5 rounded transition-colors">
                         <X size={14} />
                       </button>
@@ -173,7 +201,11 @@ export default function DashboardPage() {
             Ostatnie treningi
           </h2>
           {recent.length === 0 ? (
-            <p className="text-muted text-sm py-4 text-center">Brak treningów</p>
+            <EmptyState
+              icon={ClipboardList}
+              title="Brak treningów"
+              description="Historia treningów pojawi się tutaj."
+            />
           ) : (
             <ul className="space-y-2">
               {recent.map(t => (
@@ -190,6 +222,15 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      {confirmCancelId && (
+        <ConfirmDialog
+          message="Odwołać ten trening?"
+          confirmLabel="Odwołaj trening"
+          onConfirm={() => handleCancel(confirmCancelId)}
+          onCancel={() => setConfirmCancelId(null)}
+        />
+      )}
     </div>
   );
 }
