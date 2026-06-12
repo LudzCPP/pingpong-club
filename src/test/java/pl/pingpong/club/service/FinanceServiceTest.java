@@ -65,19 +65,19 @@ class FinanceServiceTest {
     }
 
     @Test
-    void getSummary_callerIsCoachWithNullPlayerId_queriesAllData() {
+    void getSummary_callerIsCoachWithNullPlayerId_queriesOwnTrainingsAndPlayers() {
         User coach = coachUser();
         LocalDate from = LocalDate.of(2024, 1, 1);
         LocalDate to = LocalDate.of(2024, 1, 31);
 
         given(userRepository.findByEmail("coach@test.pl")).willReturn(Optional.of(coach));
-        given(trainingRepository.findAllByStatus(TrainingStatus.COMPLETED)).willReturn(List.of());
-        given(leagueMatchRepository.findAllByPeriod(from, to)).willReturn(List.of());
+        given(userRepository.findPlayersByCoachId(coach.getId())).willReturn(List.of());
+        given(trainingRepository.findAllByCoachId(coach.getId())).willReturn(List.of());
 
         financeService.getSummary(from, to, null, "coach@test.pl");
 
-        verify(trainingRepository).findAllByStatus(TrainingStatus.COMPLETED);
-        verify(leagueMatchRepository).findAllByPeriod(from, to);
+        verify(trainingRepository).findAllByCoachId(coach.getId());
+        verify(userRepository).findPlayersByCoachId(coach.getId());
     }
 
     @Test

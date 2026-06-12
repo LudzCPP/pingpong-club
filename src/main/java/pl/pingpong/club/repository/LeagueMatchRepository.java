@@ -34,4 +34,18 @@ public interface LeagueMatchRepository extends JpaRepository<LeagueMatch, UUID> 
             @Param("from") LocalDate from,
             @Param("to") LocalDate to
     );
+
+    @Query("""
+            SELECT m FROM LeagueMatch m
+            WHERE m.player.id IN :playerIds
+              AND m.matchDate BETWEEN :from AND :to
+            ORDER BY m.matchDate DESC
+            """)
+    List<LeagueMatch> findByPlayerIdsAndPeriod(
+            @Param("playerIds") List<UUID> playerIds,
+            @Param("from") LocalDate from,
+            @Param("to") LocalDate to
+    );
+
+    List<LeagueMatch> findAllByPlayerIdInOrderByMatchDateDesc(List<UUID> playerIds);
 }

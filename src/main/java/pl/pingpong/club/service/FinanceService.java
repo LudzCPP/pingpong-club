@@ -47,23 +47,31 @@ public class FinanceService {
         // PLAYER widzi tylko siebie
         UUID resolvedPlayerId = caller.getRole() == Role.PLAYER ? caller.getId() : playerId;
 
-        List<TrainingResponse> trainings = resolvedPlayerId != null
-                ? trainingRepository.findByPlayerAndPeriodAndStatus(
-                        resolvedPlayerId,
-                        from.atStartOfDay(),
-                        to.atTime(LocalTime.MAX),
-                        TrainingStatus.COMPLETED)
-                  .stream().map(trainingMapper::toResponse).toList()
-                : trainingRepository.findAllByStatus(TrainingStatus.COMPLETED).stream()
-                  .filter(t -> !t.getScheduledAt().toLocalDate().isBefore(from)
-                          && !t.getScheduledAt().toLocalDate().isAfter(to))
-                  .map(trainingMapper::toResponse).toList();
+        List<TrainingResponse> trainings;
+        List<LeagueMatchResponse> matches;
 
-        List<LeagueMatchResponse> matches = resolvedPlayerId != null
-                ? leagueMatchRepository.findByPlayerAndPeriod(resolvedPlayerId, from, to)
-                  .stream().map(leagueMatchMapper::toResponse).toList()
-                : leagueMatchRepository.findAllByPeriod(from, to)
-                  .stream().map(leagueMatchMapper::toResponse).toList();
+        if (resolvedPlayerId != null) {
+            trainings = trainingRepository.findByPlayerAndPeriodAndStatus(
+                            resolvedPlayerId,
+                            from.atStartOfDay(),
+                            to.atTime(LocalTime.MAX),
+                            TrainingStatus.COMPLETED)
+                    .stream().map(trainingMapper::toResponse).toList();
+            matches = leagueMatchRepository.findByPlayerAndPeriod(resolvedPlayerId, from, to)
+                    .stream().map(leagueMatchMapper::toResponse).toList();
+        } else {
+            // COACH without filter — scope to own trainings and own players' matches
+            List<UUID> playerIds = userRepository.findPlayersByCoachId(caller.getId())
+                    .stream().map(User::getId).toList();
+            trainings = trainingRepository.findAllByCoachId(caller.getId()).stream()
+                    .filter(t -> t.getStatus() == TrainingStatus.COMPLETED
+                            && !t.getScheduledAt().toLocalDate().isBefore(from)
+                            && !t.getScheduledAt().toLocalDate().isAfter(to))
+                    .map(trainingMapper::toResponse).toList();
+            matches = playerIds.isEmpty() ? List.of()
+                    : leagueMatchRepository.findByPlayerIdsAndPeriod(playerIds, from, to)
+                      .stream().map(leagueMatchMapper::toResponse).toList();
+        }
 
         BigDecimal trainingEarnings = trainings.stream()
                 .map(TrainingResponse::totalPrice)
@@ -89,10 +97,15 @@ public class FinanceService {
 
     public List<LeagueMatchResponse> getMatches(String currentUserEmail) {
         User caller = findByEmail(currentUserEmail);
-        List<LeagueMatch> matches = caller.getRole() == Role.PLAYER
-                ? leagueMatchRepository.findAllByPlayerIdOrderByMatchDateDesc(caller.getId())
-                : leagueMatchRepository.findAll();
-        return matches.stream().map(leagueMatchMapper::toResponse).toList();
+        if (caller.getRole() == Role.PLAYER) {
+            return leagueMatchRepository.findAllByPlayerIdOrderByMatchDateDesc(caller.getId())
+                    .stream().map(leagueMatchMapper::toResponse).toList();
+        }
+        List<UUID> playerIds = userRepository.findPlayersByCoachId(caller.getId())
+                .stream().map(User::getId).toList();
+        if (playerIds.isEmpty()) return List.of();
+        return leagueMatchRepository.findAllByPlayerIdInOrderByMatchDateDesc(playerIds)
+                .stream().map(leagueMatchMapper::toResponse).toList();
     }
 
     public LeagueMatchResponse getMatchById(UUID id, String currentUserEmail) {
