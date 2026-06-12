@@ -586,11 +586,17 @@ export default function PlayersPage() {
                   const playerPkgs = packages[p.id] ?? [];
                   const activePkg = playerPkgs.find(pkg => pkg.remainingSessions > 0);
                   if (!activePkg) return null;
+                  const low = activePkg.remainingSessions <= 1;
                   return (
-                    <div className="flex items-center gap-1.5 text-xs bg-accent/10 border border-accent/30 text-accent rounded-lg px-2.5 py-1.5">
+                    <div className={`flex items-center gap-1.5 text-xs rounded-lg px-2.5 py-1.5 border ${
+                      low
+                        ? 'bg-amber-500/10 border-amber-500/30 text-amber-400'
+                        : 'bg-accent/10 border-accent/30 text-accent'
+                    }`}>
                       <Package size={11} />
                       <span className="font-semibold">{activePkg.remainingSessions}</span>
-                      <span className="text-accent/70">/ {activePkg.totalSessions} sesji</span>
+                      <span className="opacity-70">/ {activePkg.totalSessions} sesji</span>
+                      {low && <span className="font-medium">⚠</span>}
                     </div>
                   );
                 })()}

@@ -6,7 +6,7 @@ import StatusBadge from '../components/StatusBadge';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { Skeleton } from '../components/ui';
 import { usePageTitle } from '../hooks/usePageTitle';
-import { Check, X, Plus, Mic, MicOff, Sparkles, Loader, Banknote, Search, MapPin, ChevronDown, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
+import { Check, X, Plus, Mic, MicOff, Sparkles, Loader, Banknote, Search, MapPin, ChevronDown, ChevronLeft, ChevronRight, RefreshCw, Pencil } from 'lucide-react';
 
 function getPageNumbers(current, total) {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
@@ -56,6 +56,9 @@ export default function TrainingsPage() {
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
   const [aiFilledLabel, setAiFilledLabel] = useState('');
+
+  // Edit mode
+  const [editingId, setEditingId] = useState(null);
 
   // Complete with notes modal
   const [completing, setCompleting] = useState(null); // { id, notes }
@@ -155,30 +158,52 @@ export default function TrainingsPage() {
 
   // ── Manual form submit ────────────────────────────────────────────────────
 
-  async function handleCreate(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     setFormError('');
     setSaving(true);
     try {
-      const duration = Number(form.durationMinutes);
-      const total = Number(form.totalPrice);
-      await client.post('/trainings', {
+      const payload = {
         playerId: form.playerId,
         scheduledAt: form.scheduledAt,
-        durationMinutes: duration,
-        totalPrice: total,
-        notes: form.notes,
+        durationMinutes: Number(form.durationMinutes),
+        totalPrice: Number(form.totalPrice),
+        notes: form.notes || null,
         location: form.location || null,
-        recurrenceWeeks: form.recurring ? Number(form.recurrenceWeeks) : null,
-      });
+      };
+      if (editingId) {
+        await client.put(`/trainings/${editingId}`, payload);
+      } else {
+        await client.post('/trainings', { ...payload, recurrenceWeeks: form.recurring ? Number(form.recurrenceWeeks) : null });
+      }
       setShowForm(false);
       setShowAiPanel(false);
       setAiFilledLabel('');
       setForm(EMPTY_FORM);
+      setEditingId(null);
       await fetchTrainings();
     } catch (err) {
       setFormError(err.response?.data?.detail || 'Błąd zapisu treningu.');
     } finally { setSaving(false); }
+  }
+
+  function openEditForm(t) {
+    setEditingId(t.id);
+    setForm({
+      playerId: t.playerId,
+      scheduledAt: formatForDatetimeInput(t.scheduledAt),
+      durationMinutes: t.durationMinutes,
+      totalPrice: t.totalPrice != null ? String(Number(t.totalPrice)) : '',
+      notes: t.notes || '',
+      location: t.location || '',
+      recurring: false,
+      recurrenceWeeks: 4,
+    });
+    setFormError('');
+    setShowAiPanel(false);
+    setAiFilledLabel('');
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   async function handleComplete(id, notes) {
@@ -206,6 +231,7 @@ export default function TrainingsPage() {
     setShowAiPanel(false);
     setAiFilledLabel('');
     setForm(EMPTY_FORM);
+    setEditingId(null);
     setShowForm(s => !s);
   }
 
@@ -458,8 +484,8 @@ export default function TrainingsPage() {
               {aiFilledLabel}
             </div>
           )}
-          <h2 className="text-white font-semibold mb-5">Zaplanuj trening</h2>
-          <form onSubmit={handleCreate} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <h2 className="text-white font-semibold mb-5">{editingId ? 'Edytuj trening' : 'Zaplanuj trening'}</h2>
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className={labelCls}>Zawodnik</label>
               <select value={form.playerId} onChange={e => setForm({ ...form, playerId: e.target.value })} required className={inputCls}>
@@ -487,42 +513,45 @@ export default function TrainingsPage() {
               <label className={labelCls}>Notatki</label>
               <input type="text" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="opcjonalnie" className={inputCls} />
             </div>
-            <div className="sm:col-span-2 space-y-2">
-              <label className="flex items-center gap-2.5 cursor-pointer group">
-                <input
-                  type="checkbox"
-                  checked={form.recurring}
-                  onChange={e => setForm({ ...form, recurring: e.target.checked })}
-                  className="w-4 h-4 accent-accent cursor-pointer"
-                />
-                <span className="flex items-center gap-1.5 text-sm text-muted group-hover:text-white transition-colors">
-                  <RefreshCw size={13} />
-                  Powtarzaj co tydzień (trening cykliczny)
-                </span>
-              </label>
-              {form.recurring && (
-                <div className="flex items-center gap-3 pl-6">
+            {!editingId && (
+              <div className="sm:col-span-2 space-y-2">
+                <label className="flex items-center gap-2.5 cursor-pointer group">
                   <input
-                    type="number"
-                    min="2"
-                    max="12"
-                    value={form.recurrenceWeeks}
-                    onChange={e => setForm({ ...form, recurrenceWeeks: e.target.value })}
-                    className={`${inputCls} w-20`}
+                    type="checkbox"
+                    checked={form.recurring}
+                    onChange={e => setForm({ ...form, recurring: e.target.checked })}
+                    className="w-4 h-4 accent-accent cursor-pointer"
                   />
-                  <span className="text-sm text-muted">tygodni łącznie</span>
-                  <span className="text-xs text-muted">
-                    (stworzy {form.recurrenceWeeks} treningów co 7 dni)
+                  <span className="flex items-center gap-1.5 text-sm text-muted group-hover:text-white transition-colors">
+                    <RefreshCw size={13} />
+                    Powtarzaj co tydzień (trening cykliczny)
                   </span>
-                </div>
-              )}
-            </div>
+                </label>
+                {form.recurring && (
+                  <div className="flex items-center gap-3 pl-6">
+                    <input
+                      type="number"
+                      min="2"
+                      max="12"
+                      value={form.recurrenceWeeks}
+                      onChange={e => setForm({ ...form, recurrenceWeeks: e.target.value })}
+                      className={`${inputCls} w-20`}
+                    />
+                    <span className="text-sm text-muted">tygodni łącznie</span>
+                    <span className="text-xs text-muted">
+                      (stworzy {form.recurrenceWeeks} treningów co 7 dni)
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
             {formError && <div className="sm:col-span-2 bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-lg">{formError}</div>}
             <div className="sm:col-span-2 flex gap-3">
-              <button type="submit" disabled={saving} className="bg-accent hover:bg-green-600 disabled:opacity-50 text-white font-semibold px-6 py-2 rounded-lg transition-colors text-sm">
-                {saving ? 'Zapisywanie...' : 'Zaplanuj trening'}
+              <button type="submit" disabled={saving} className="flex items-center gap-2 bg-accent hover:bg-green-600 disabled:opacity-50 text-white font-semibold px-6 py-2 rounded-lg transition-colors text-sm">
+                {saving && <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>}
+                {saving ? 'Zapisywanie...' : editingId ? 'Zapisz zmiany' : 'Zaplanuj trening'}
               </button>
-              <button type="button" onClick={() => { setShowForm(false); setAiFilledLabel(''); }} className="text-sm text-muted hover:text-white px-3 py-2 rounded-lg transition-colors">
+              <button type="button" onClick={() => { setShowForm(false); setEditingId(null); setAiFilledLabel(''); }} className="text-sm text-muted hover:text-white px-3 py-2 rounded-lg transition-colors">
                 Anuluj
               </button>
             </div>
@@ -603,10 +632,14 @@ export default function TrainingsPage() {
                       {isCoach && (
                         <div>
                           {t.status === 'SCHEDULED' && (
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 flex-wrap">
                               <button onClick={() => setCompleting({ id: t.id, notes: '' })}
                                 className="flex items-center gap-1.5 text-xs font-medium text-green-400 border border-green-500/30 bg-green-500/10 hover:bg-green-500/20 px-2.5 py-1.5 rounded-lg transition-colors">
                                 <Check size={12} /> Zakończ
+                              </button>
+                              <button onClick={() => openEditForm(t)}
+                                className="flex items-center gap-1.5 text-xs font-medium text-blue-400 border border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 px-2.5 py-1.5 rounded-lg transition-colors">
+                                <Pencil size={12} /> Edytuj
                               </button>
                               <button onClick={() => setConfirmCancel({ id: t.id, recurringGroupId: t.recurringGroupId ?? null })}
                                 className="flex items-center gap-1.5 text-xs font-medium text-red-400 border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 px-2.5 py-1.5 rounded-lg transition-colors">
@@ -698,6 +731,10 @@ export default function TrainingsPage() {
                               <button onClick={() => setCompleting({ id: t.id, notes: '' })} title="Zakończ"
                                 className="text-green-400 hover:bg-green-400/10 p-1.5 rounded transition-colors">
                                 <Check size={14} />
+                              </button>
+                              <button onClick={() => openEditForm(t)} title="Edytuj"
+                                className="text-blue-400 hover:bg-blue-400/10 p-1.5 rounded transition-colors">
+                                <Pencil size={14} />
                               </button>
                               <button onClick={() => setConfirmCancel({ id: t.id, recurringGroupId: t.recurringGroupId ?? null })} title="Odwołaj"
                                 className="text-red-400 hover:bg-red-400/10 p-1.5 rounded transition-colors">
