@@ -69,8 +69,9 @@ export default function DashboardPage() {
     const d = t.scheduledAt?.split('T')[0];
     return d >= weekStart() && t.status === 'SCHEDULED';
   });
-  const recent = [...trainings]
-    .sort((a, b) => new Date(b.scheduledAt) - new Date(a.scheduledAt))
+  const upcoming = [...trainings]
+    .filter(t => t.status === 'SCHEDULED' && t.scheduledAt?.split('T')[0] > todayStr())
+    .sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt))
     .slice(0, 5);
 
   async function handleComplete(id) {
@@ -197,28 +198,30 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Ostatnie treningi */}
+        {/* Nadchodzące treningi */}
         <div className="bg-surface border border-border rounded-xl p-6">
           <h2 className="text-white font-semibold text-lg mb-4 flex items-center gap-2">
-            <ClipboardList size={18} className="text-slate-400" />
-            Ostatnie treningi
+            <CalendarDays size={18} className="text-blue-400" />
+            Nadchodzące treningi
           </h2>
-          {recent.length === 0 ? (
+          {upcoming.length === 0 ? (
             <EmptyState
-              icon={ClipboardList}
-              title="Brak treningów"
-              description="Historia treningów pojawi się tutaj."
+              icon={CalendarDays}
+              title="Brak nadchodzących treningów"
+              description="Zaplanowane treningi na kolejne dni pojawią się tutaj."
             />
           ) : (
             <ul className="space-y-2">
-              {recent.map(t => (
+              {upcoming.map(t => (
                 <li key={t.id} className="flex items-center gap-3 py-2 border-b border-border last:border-0">
                   <Avatar firstName={t.playerFullName?.split(' ')[0]} lastName={t.playerFullName?.split(' ')[1]} size="sm" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-white text-sm truncate">{t.name}</p>
-                    <p className="text-muted text-xs">{formatDate(t.scheduledAt)}</p>
+                    <p className="text-white text-sm truncate">{isCoach ? t.playerFullName : t.coachFullName}</p>
+                    <p className="text-muted text-xs">{formatDate(t.scheduledAt)} · {t.durationMinutes} min</p>
                   </div>
-                  <StatusBadge status={t.status} />
+                  <span className="text-white text-sm font-semibold shrink-0">
+                    {t.totalPrice != null ? `${Number(t.totalPrice).toFixed(0)} zł` : '—'}
+                  </span>
                 </li>
               ))}
             </ul>
