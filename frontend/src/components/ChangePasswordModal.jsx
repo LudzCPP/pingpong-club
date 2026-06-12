@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import client from '../api/client';
 import { X } from 'lucide-react';
 
@@ -9,6 +9,12 @@ export default function ChangePasswordModal({ onClose }) {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    function handler(e) { if (e.key === 'Escape') onClose(); }
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onClose]);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -32,8 +38,8 @@ export default function ChangePasswordModal({ onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-      <div className="bg-surface border border-border rounded-xl p-6 w-full max-w-sm shadow-2xl">
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 animate-[modal-backdrop-in_0.2s_ease-out]">
+      <div className="bg-surface border border-border rounded-xl p-6 w-full max-w-sm shadow-2xl animate-[modal-content-in_0.2s_ease-out]">
         <div className="flex items-center justify-between mb-5">
           <h3 className="text-white font-semibold">Zmień hasło</h3>
           <button onClick={onClose} className="text-muted hover:text-white transition-colors">
@@ -96,8 +102,14 @@ export default function ChangePasswordModal({ onClose }) {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-accent hover:bg-green-600 disabled:opacity-50 text-white font-semibold py-2 rounded-lg transition-colors text-sm"
+              className="w-full bg-accent hover:bg-green-600 disabled:opacity-50 text-white font-semibold py-2 rounded-lg transition-colors text-sm flex items-center justify-center gap-2"
             >
+              {loading && (
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+              )}
               {loading ? 'Zapisywanie...' : 'Zmień hasło'}
             </button>
           </form>

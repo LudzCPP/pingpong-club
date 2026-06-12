@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import client from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import Avatar from '../components/Avatar';
+import { usePageTitle } from '../hooks/usePageTitle';
 import { Banknote, Dumbbell, Trophy, Users, Download, CalendarDays } from 'lucide-react';
 
 function fmtShort(amount) {
@@ -174,6 +175,8 @@ export default function ReportsPage() {
       ])
     );
   }
+
+  usePageTitle('Raporty');
 
   if (loading) return <div className="max-w-6xl mx-auto px-6 py-12 text-center text-muted">Ładowanie danych...</div>;
 

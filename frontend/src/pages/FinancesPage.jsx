@@ -3,6 +3,7 @@ import client from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import Avatar from '../components/Avatar';
 import StatCard from '../components/StatCard';
+import { usePageTitle } from '../hooks/usePageTitle';
 import { Dumbbell, Trophy, Banknote, Plus, X, Trash2 } from 'lucide-react';
 
 const inputCls = 'bg-base border border-border rounded-lg px-3 py-2 text-white text-sm placeholder-muted focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors w-full';
@@ -66,6 +67,8 @@ export default function FinancesPage() {
     await client.delete(`/finances/matches/${id}`);
     await fetchMatches();
   }
+
+  usePageTitle('Finanse');
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-8 space-y-6">

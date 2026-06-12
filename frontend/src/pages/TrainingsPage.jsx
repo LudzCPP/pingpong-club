@@ -4,7 +4,16 @@ import { useAuth } from '../context/AuthContext';
 import Avatar from '../components/Avatar';
 import StatusBadge from '../components/StatusBadge';
 import ConfirmDialog from '../components/ConfirmDialog';
+import { Skeleton } from '../components/ui';
+import { usePageTitle } from '../hooks/usePageTitle';
 import { Check, X, Plus, Mic, MicOff, Sparkles, Loader, Banknote, Search, MapPin, ChevronDown, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
+
+function getPageNumbers(current, total) {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  if (current <= 4) return [1, 2, 3, 4, 5, '...', total];
+  if (current >= total - 3) return [1, '...', total - 4, total - 3, total - 2, total - 1, total];
+  return [1, '...', current - 1, current, current + 1, '...', total];
+}
 
 const FILTERS = ['Wszystkie', 'SCHEDULED', 'COMPLETED', 'CANCELLED'];
 const FILTER_LABEL = { Wszystkie: 'Wszystkie', SCHEDULED: 'Zaplanowane', COMPLETED: 'Zrealizowane', CANCELLED: 'Odwołane' };
@@ -224,14 +233,50 @@ export default function TrainingsPage() {
     listRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  if (loading) return <div className="max-w-6xl mx-auto px-6 py-12 text-center text-muted">Ładowanie...</div>;
+  usePageTitle('Treningi');
+
+  useEffect(() => {
+    if (!completing) return;
+    function handler(e) { if (e.key === 'Escape') setCompleting(null); }
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [completing]);
+
+  useEffect(() => {
+    if (!confirmCancel?.recurringGroupId) return;
+    function handler(e) { if (e.key === 'Escape') setConfirmCancel(null); }
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [confirmCancel]);
+
+  if (loading) {
+    return (
+      <div className="max-w-6xl mx-auto px-6 py-8 space-y-6">
+        <div className="flex items-center justify-between gap-3">
+          <Skeleton className="h-8 w-28 rounded-lg" />
+          <div className="flex gap-2">
+            <Skeleton className="h-10 w-28 rounded-lg" />
+            <Skeleton className="h-10 w-36 rounded-lg" />
+          </div>
+        </div>
+        <div className="flex gap-3">
+          <Skeleton className="h-9 w-48 rounded-lg" />
+          <Skeleton className="h-9 w-24 rounded-full" />
+          <Skeleton className="h-9 w-28 rounded-full" />
+          <Skeleton className="h-9 w-28 rounded-full" />
+          <Skeleton className="h-9 w-24 rounded-full" />
+        </div>
+        <Skeleton className="h-[420px] rounded-xl" />
+      </div>
+    );
+  }
 
   return (
     <>
     {confirmCancel && (
       confirmCancel.recurringGroupId ? (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-surface border border-border rounded-xl p-6 w-full max-w-sm shadow-2xl space-y-4">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 animate-[modal-backdrop-in_0.2s_ease-out]">
+          <div className="bg-surface border border-border rounded-xl p-6 w-full max-w-sm shadow-2xl space-y-4 animate-[modal-content-in_0.2s_ease-out]">
             <div className="flex items-center gap-2">
               <RefreshCw size={16} className="text-amber-400 shrink-0" />
               <h3 className="text-white font-semibold">Odwołaj trening z cyklu</h3>
@@ -270,8 +315,8 @@ export default function TrainingsPage() {
     )}
     {/* Complete training modal */}
     {completing && (
-      <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-        <div className="bg-surface border border-border rounded-xl p-6 w-full max-w-md shadow-2xl">
+      <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 animate-[modal-backdrop-in_0.2s_ease-out]">
+        <div className="bg-surface border border-border rounded-xl p-6 w-full max-w-md shadow-2xl animate-[modal-content-in_0.2s_ease-out]">
           <h3 className="text-white font-semibold mb-1">Zakończ trening</h3>
           <p className="text-sm text-muted mb-4">Dodaj notatkę z sesji — co ćwiczyliście? (opcjonalnie)</p>
           <textarea
@@ -712,23 +757,37 @@ export default function TrainingsPage() {
           <p className="text-xs text-muted">
             {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, visible.length)} z {visible.length} treningów
           </p>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <button
               onClick={() => changePage(currentPage - 1)}
               disabled={currentPage === 1}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium bg-surface border border-border text-muted hover:text-white hover:border-slate-500 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-muted disabled:hover:border-border transition-colors"
+              className="flex items-center justify-center w-8 h-8 rounded-lg text-sm bg-surface border border-border text-muted hover:text-white hover:border-slate-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
-              <ChevronLeft size={14} /> Poprzednia
+              <ChevronLeft size={14} />
             </button>
-            <span className="text-sm text-muted px-1 whitespace-nowrap">
-              Strona <span className="text-white font-medium">{currentPage}</span> z {totalPages}
-            </span>
+            {getPageNumbers(currentPage, totalPages).map((p, i) =>
+              p === '...' ? (
+                <span key={`e${i}`} className="w-8 h-8 flex items-center justify-center text-muted text-sm">…</span>
+              ) : (
+                <button
+                  key={p}
+                  onClick={() => changePage(p)}
+                  className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
+                    p === currentPage
+                      ? 'bg-accent text-white'
+                      : 'bg-surface border border-border text-muted hover:text-white hover:border-slate-500'
+                  }`}
+                >
+                  {p}
+                </button>
+              )
+            )}
             <button
               onClick={() => changePage(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium bg-surface border border-border text-muted hover:text-white hover:border-slate-500 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-muted disabled:hover:border-border transition-colors"
+              className="flex items-center justify-center w-8 h-8 rounded-lg text-sm bg-surface border border-border text-muted hover:text-white hover:border-slate-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
-              Następna <ChevronRight size={14} />
+              <ChevronRight size={14} />
             </button>
           </div>
         </div>

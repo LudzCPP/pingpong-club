@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import client from '../api/client';
 import Avatar from '../components/Avatar';
 import ConfirmDialog from '../components/ConfirmDialog';
+import { Skeleton } from '../components/ui';
+import { usePageTitle } from '../hooks/usePageTitle';
 import { Link, Copy, Check, UserX } from 'lucide-react';
 
 export default function CoachesPage() {
@@ -50,7 +52,24 @@ export default function CoachesPage() {
     await fetchCoaches();
   }
 
-  if (loading) return <div className="max-w-6xl mx-auto px-6 py-12 text-center text-muted">Ładowanie...</div>;
+  usePageTitle('Trenerzy');
+
+  if (loading) {
+    return (
+      <div className="max-w-6xl mx-auto px-6 py-8 space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-28 rounded-lg" />
+            <Skeleton className="h-4 w-44 rounded" />
+          </div>
+          <Skeleton className="h-10 w-44 rounded-lg" />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-32 rounded-xl" />)}
+        </div>
+      </div>
+    );
+  }
 
   const active = coaches.filter(c => c.active).length;
 
