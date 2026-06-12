@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import client from '../api/client';
 import StatusBadge from '../components/StatusBadge';
+import { Skeleton } from '../components/ui';
+import { usePageTitle } from '../hooks/usePageTitle';
 import { ChevronLeft, ChevronRight, MapPin } from 'lucide-react';
 
 const DAYS_SHORT = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Ndz'];
@@ -91,7 +93,21 @@ export default function CalendarPage() {
     ? (byDate[selectedKey] ?? []).sort((a, b) => new Date(a.scheduledAt) - new Date(b.scheduledAt))
     : [];
 
-  if (loading) return <div className="max-w-4xl mx-auto px-6 py-12 text-center text-muted">Ładowanie...</div>;
+  usePageTitle('Kalendarz');
+
+  if (loading) {
+    return (
+      <div className="max-w-4xl mx-auto px-6 py-8 space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-32 rounded-lg" />
+            <Skeleton className="h-4 w-44 rounded" />
+          </div>
+        </div>
+        <Skeleton className="h-[440px] rounded-xl" />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-8 space-y-6">

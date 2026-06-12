@@ -3,6 +3,8 @@ import client from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import Avatar from '../components/Avatar';
 import ConfirmDialog from '../components/ConfirmDialog';
+import { Skeleton } from '../components/ui';
+import { usePageTitle } from '../hooks/usePageTitle';
 import { Link, Copy, Check, UserX, UserMinus, Mail, Send, Ghost, UserPlus, X, Package, ChevronDown, ChevronUp, Plus } from 'lucide-react';
 
 const inputCls = 'flex-1 bg-base border border-border rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-accent placeholder-slate-600';
@@ -11,6 +13,12 @@ function VirtualInviteModal({ player, onClose, onSent }) {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    function handler(e) { if (e.key === 'Escape') onClose(); }
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onClose]);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -28,8 +36,8 @@ function VirtualInviteModal({ player, onClose, onSent }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4">
-      <div className="bg-surface border border-border rounded-2xl p-6 w-full max-w-md shadow-2xl">
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4 animate-[modal-backdrop-in_0.2s_ease-out]">
+      <div className="bg-surface border border-border rounded-2xl p-6 w-full max-w-md shadow-2xl animate-[modal-content-in_0.2s_ease-out]">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-white font-semibold">Zaproś do konta</h2>
           <button onClick={onClose} className="text-muted hover:text-white transition-colors"><X size={18} /></button>
@@ -74,6 +82,12 @@ function AddVirtualPlayerModal({ onClose, onCreated }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  useEffect(() => {
+    function handler(e) { if (e.key === 'Escape') onClose(); }
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onClose]);
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
@@ -90,8 +104,8 @@ function AddVirtualPlayerModal({ onClose, onCreated }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4">
-      <div className="bg-surface border border-border rounded-2xl p-6 w-full max-w-md shadow-2xl">
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4 animate-[modal-backdrop-in_0.2s_ease-out]">
+      <div className="bg-surface border border-border rounded-2xl p-6 w-full max-w-md shadow-2xl animate-[modal-content-in_0.2s_ease-out]">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-white font-semibold">Dodaj zawodnika</h2>
           <button onClick={onClose} className="text-muted hover:text-white transition-colors"><X size={18} /></button>
@@ -145,6 +159,12 @@ function PackageModal({ player, packages, onClose, onAdded }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
+  useEffect(() => {
+    function handler(e) { if (e.key === 'Escape') onClose(); }
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onClose]);
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
@@ -169,8 +189,8 @@ function PackageModal({ player, packages, onClose, onAdded }) {
   const activePkg = packages.find(p => p.remainingSessions > 0);
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4">
-      <div className="bg-surface border border-border rounded-2xl p-6 w-full max-w-md shadow-2xl">
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4 animate-[modal-backdrop-in_0.2s_ease-out]">
+      <div className="bg-surface border border-border rounded-2xl p-6 w-full max-w-md shadow-2xl animate-[modal-content-in_0.2s_ease-out]">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Package size={16} className="text-accent" />
@@ -371,7 +391,24 @@ export default function PlayersPage() {
     await fetchPlayers();
   }
 
-  if (loading) return <div className="max-w-6xl mx-auto px-6 py-12 text-center text-muted">Ładowanie...</div>;
+  usePageTitle('Zawodnicy');
+
+  if (loading) {
+    return (
+      <div className="max-w-6xl mx-auto px-6 py-8 space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-32 rounded-lg" />
+            <Skeleton className="h-4 w-48 rounded" />
+          </div>
+          <Skeleton className="h-10 w-40 rounded-lg" />
+        </div>
+        <div className="space-y-2">
+          {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-[68px] rounded-xl" />)}
+        </div>
+      </div>
+    );
+  }
 
   const active = players.filter(p => p.active && !p.virtual).length;
   const virtual = players.filter(p => p.virtual).length;

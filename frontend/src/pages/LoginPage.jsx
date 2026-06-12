@@ -3,6 +3,7 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Target } from 'lucide-react';
 import { Button, Card, Input, Alert } from '../components/ui';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -26,6 +27,8 @@ export default function LoginPage() {
       setLoading(false);
     }
   }
+
+  usePageTitle('Logowanie');
 
   return (
     <div className="min-h-screen bg-base flex items-center justify-center px-4"

@@ -8,6 +8,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import { Skeleton, EmptyState } from '../components/ui';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { usePageTitle } from '../hooks/usePageTitle';
 import { CalendarCheck, CalendarDays, Banknote, Users, Check, X, ClipboardList } from 'lucide-react';
 
 function todayStr() {
@@ -93,6 +94,8 @@ export default function DashboardPage() {
   }
 
   const firstName = isCoach ? 'Trenerze' : (user?.firstName || user?.email?.split('@')[0] || '');
+
+  usePageTitle('Dashboard');
 
   if (loading) {
     return (

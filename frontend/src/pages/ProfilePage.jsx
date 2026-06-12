@@ -4,6 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import Avatar from '../components/Avatar';
 import StatCard from '../components/StatCard';
 import ChangePasswordModal from '../components/ChangePasswordModal';
+import { Skeleton } from '../components/ui';
+import { usePageTitle } from '../hooks/usePageTitle';
 import { Users, CalendarCheck, Banknote, Pencil, X, Check, KeyRound, ShieldCheck } from 'lucide-react';
 
 function todayStr() {
@@ -79,8 +81,19 @@ export default function ProfilePage() {
     PLAYER: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
   }[authUser?.role] ?? '';
 
+  usePageTitle('Profil');
+
   if (loading) {
-    return <div className="max-w-3xl mx-auto px-6 py-12 text-center text-muted">Ładowanie...</div>;
+    return (
+      <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
+        <Skeleton className="h-24 rounded-2xl" />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-[88px] rounded-xl" />)}
+        </div>
+        <Skeleton className="h-52 rounded-xl" />
+        <Skeleton className="h-24 rounded-xl" />
+      </div>
+    );
   }
 
   const activePlayers = players.filter(p => p.active).length;

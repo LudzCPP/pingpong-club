@@ -3,6 +3,8 @@ import client from '../api/client';
 import StatCard from '../components/StatCard';
 import Avatar from '../components/Avatar';
 import ConfirmDialog from '../components/ConfirmDialog';
+import { Skeleton } from '../components/ui';
+import { usePageTitle } from '../hooks/usePageTitle';
 import { Users, UserCheck, CalendarCheck, CalendarDays, Banknote, XCircle, Link, Copy, Check, UserX, UserPlus, Ghost } from 'lucide-react';
 
 function todayPolish() {
@@ -69,8 +71,21 @@ export default function AdminDashboardPage() {
     { id: 'players', label: `Zawodnicy${stats ? ` (${stats.totalPlayers})` : ''}` },
   ];
 
+  usePageTitle('Panel administratora');
+
   if (loading) {
-    return <div className="max-w-6xl mx-auto px-6 py-12 text-center text-muted">Ładowanie...</div>;
+    return (
+      <div className="max-w-6xl mx-auto px-6 py-8 space-y-6">
+        <Skeleton className="h-20 rounded-2xl" />
+        <Skeleton className="h-12 rounded-xl" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-[88px] rounded-xl" />)}
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-[88px] rounded-xl" />)}
+        </div>
+      </div>
+    );
   }
 
   return (

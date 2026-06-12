@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Target } from 'lucide-react';
 import client from '../api/client';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -24,6 +25,8 @@ export default function ForgotPasswordPage() {
       setLoading(false);
     }
   }
+
+  usePageTitle('Resetowanie hasła');
 
   return (
     <div className="min-h-screen bg-base flex items-center justify-center px-4"
