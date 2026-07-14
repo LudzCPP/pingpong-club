@@ -25,4 +25,4 @@ Thumbs.db
 *.log
 
 ### Claude Code ###
-.claude/settings.local.json.tmp.*
+.claude/
